@@ -13,7 +13,7 @@
 
 ## Live Demo
 
-Visit: [https://YOUR_USERNAME.github.io/ysvh-activity-picker](https://YOUR_USERNAME.github.io/ysvh-activity-picker)
+Visit: [https://Samurai412.github.io/ysvh-activity-picker](https://Samurai412.github.io/ysvh-activity-picker)
 
 ## Deploying to GitHub Pages
 
@@ -26,7 +26,7 @@ Visit: [https://YOUR_USERNAME.github.io/ysvh-activity-picker](https://YOUR_USERN
    git add .
    git commit -m "Initial commit: YSVH Activity Picker"
    git branch -M main
-   git remote add origin https://github.com/YOUR_USERNAME/ysvh-activity-picker.git
+   git remote add origin https://github.com/Samurai412/ysvh-activity-picker.git
    git push -u origin main
    ```
 3. Go to your repository Settings → Pages
