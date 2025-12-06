@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YSVH Activity Picker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="floating-shapes"></div>
+        <div class="particle-container" id="particles"></div>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1 class="glitch" data-text="YSVH">YSVH</h1>
+            <p class="subtitle">Voice Chat Activity Picker</p>
+        </header>
+
+        <main>
+            <div class="picker-container">
+                <div class="slot-machine" id="slotMachine">
+                    <div class="slot-window">
+                        <div class="slot-reel" id="slotReel">
+                            <!-- Activities will be populated here -->
+                        </div>
+                    </div>
+                    <div class="slot-overlay top"></div>
+                    <div class="slot-overlay bottom"></div>
+                </div>
+
+                <div class="selected-activity" id="selectedActivity">
+                    <div class="activity-card hidden" id="activityCard">
+                        <div class="card-glow"></div>
+                        <div class="card-content">
+                            <span class="category-badge" id="categoryBadge"></span>
+                            <h2 id="activityName"></h2>
+                            <p id="activityDescription"></p>
+                            <a href="#" id="activityLink" target="_blank" class="go-button">
+                                <span>Let's Go!</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="pick-button" id="pickButton">
+                        <span class="button-bg"></span>
+                        <span class="button-text">
+                            <span class="icon">🎲</span>
+                            Pick Random Activity
+                        </span>
+                    </button>
+                    
+                    <div class="filter-container">
+                        <button class="filter-toggle" id="filterToggle">
+                            <span>Filter by Category</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </button>
+                        <div class="filter-dropdown hidden" id="filterDropdown">
+                            <label class="filter-option">
+                                <input type="checkbox" value="all" checked> All Activities
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="activity-grid-section">
+                <h2 class="section-title">
+                    <span class="title-decoration"></span>
+                    All Activities
+                    <span class="title-decoration"></span>
+                </h2>
+                <div class="activity-grid" id="activityGrid">
+                    <!-- Activities will be populated here -->
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Made with 💛 for YSVH Voice Chat</p>
+        </footer>
+    </div>
+
+    <div class="confetti-container" id="confetti"></div>
+
+    <script src="activities.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
