@@ -238,7 +238,7 @@ function showSelectedActivity(activity) {
 // Confetti Effect
 // ========================================
 function createConfetti() {
-    const colors = ['#fff44f', '#87ceeb', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4'];
+    const colors = ['#ffe119', '#29b6f6', '#4caf50', '#7b1fa2', '#ffffff', '#9c4dcc'];
     const shapes = ['square', 'circle'];
     
     for (let i = 0; i < 100; i++) {

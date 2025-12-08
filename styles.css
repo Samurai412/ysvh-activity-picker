@@ -2,15 +2,21 @@
    CSS Variables & Base Styles
    ======================================== */
 :root {
-    --lemon-yellow: #fff44f;
-    --lemon-light: #fffacd;
-    --lemon-dark: #e6db00;
-    --sky-blue: #87ceeb;
-    --sky-blue-light: #b0e0e6;
-    --sky-blue-dark: #4a90a4;
+    --yellow: #ffe119;
+    --yellow-light: #fff44f;
+    --yellow-dark: #e6c800;
+    --sky-blue: #29b6f6;
+    --sky-blue-light: #4fc3f7;
+    --sky-blue-dark: #0288d1;
+    --green: #4caf50;
+    --green-light: #66bb6a;
+    --green-dark: #388e3c;
+    --purple: #7b1fa2;
+    --purple-light: #9c4dcc;
+    --purple-dark: #4a0072;
+    --white: #ffffff;
     --dark: #1a1a2e;
     --dark-light: #16213e;
-    --white: #ffffff;
     --gray: #8892b0;
     
     --font-display: 'Orbitron', sans-serif;
@@ -20,7 +26,7 @@
     --transition-normal: 0.3s ease;
     --transition-slow: 0.5s ease;
     
-    --shadow-glow: 0 0 30px rgba(255, 244, 79, 0.3);
+    --shadow-glow: 0 0 30px rgba(123, 31, 162, 0.3);
     --shadow-card: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
@@ -36,7 +42,7 @@ html {
 
 body {
     font-family: var(--font-body);
-    background: linear-gradient(135deg, var(--lemon-light) 0%, var(--lemon-yellow) 50%, var(--lemon-light) 100%);
+    background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-light) 50%, var(--yellow) 100%);
     min-height: 100vh;
     color: var(--dark);
     overflow-x: hidden;
@@ -74,7 +80,7 @@ body {
 .floating-shapes::before {
     width: 300px;
     height: 300px;
-    background: radial-gradient(circle, rgba(135, 206, 235, 0.3) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(123, 31, 162, 0.3) 0%, transparent 70%);
     top: 10%;
     left: 10%;
 }
@@ -82,7 +88,7 @@ body {
 .floating-shapes::after {
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, rgba(135, 206, 235, 0.2) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(76, 175, 80, 0.25) 0%, transparent 70%);
     bottom: 10%;
     right: 10%;
     animation-delay: -7s;
@@ -151,11 +157,11 @@ header {
     font-family: var(--font-display);
     font-size: clamp(4rem, 15vw, 8rem);
     font-weight: 900;
-    color: var(--dark);
+    color: var(--purple);
     position: relative;
     text-shadow: 
         3px 3px 0 var(--sky-blue),
-        -3px -3px 0 var(--lemon-dark);
+        -3px -3px 0 var(--green);
     animation: glitch 3s infinite;
 }
 
@@ -178,7 +184,7 @@ header {
 .glitch::after {
     animation: glitch-2 3s infinite linear alternate-reverse;
     clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
-    color: var(--lemon-dark);
+    color: var(--green);
 }
 
 @keyframes glitch {
@@ -258,7 +264,7 @@ header {
     padding: 1rem 2rem;
     font-family: var(--font-display);
     font-size: 1.2rem;
-    color: var(--lemon-yellow);
+    color: var(--yellow);
     white-space: nowrap;
     text-align: center;
     height: 60px;
@@ -343,10 +349,10 @@ header {
     background: conic-gradient(
         from 0deg,
         transparent,
-        var(--lemon-yellow),
+        var(--yellow),
         var(--sky-blue),
-        transparent,
-        var(--lemon-yellow),
+        var(--green),
+        var(--purple),
         transparent
     );
     animation: rotate-glow 3s linear infinite;
@@ -373,7 +379,7 @@ header {
 .category-badge {
     display: inline-block;
     padding: 0.3rem 1rem;
-    background: linear-gradient(135deg, var(--sky-blue) 0%, var(--sky-blue-dark) 100%);
+    background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
     color: var(--white);
     border-radius: 20px;
     font-size: 0.8rem;
@@ -401,19 +407,19 @@ header {
     align-items: center;
     gap: 0.5rem;
     padding: 0.8rem 2rem;
-    background: linear-gradient(135deg, var(--lemon-yellow) 0%, var(--lemon-dark) 100%);
-    color: var(--dark);
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+    color: var(--white);
     text-decoration: none;
     border-radius: 30px;
     font-weight: 600;
     font-family: var(--font-display);
     transition: all var(--transition-normal);
-    box-shadow: 0 4px 15px rgba(255, 244, 79, 0.4);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
 }
 
 .go-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(255, 244, 79, 0.6);
+    box-shadow: 0 6px 25px rgba(76, 175, 80, 0.6);
 }
 
 .go-button svg {
@@ -465,18 +471,18 @@ header {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, var(--sky-blue) 0%, var(--sky-blue-dark) 100%);
+    background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
     border-radius: 50px;
     z-index: 0;
     transition: all var(--transition-normal);
     box-shadow: 
-        0 10px 30px rgba(135, 206, 235, 0.4),
+        0 10px 30px rgba(123, 31, 162, 0.4),
         inset 0 2px 0 rgba(255, 255, 255, 0.3);
 }
 
 .pick-button:hover .button-bg {
     box-shadow: 
-        0 15px 40px rgba(135, 206, 235, 0.6),
+        0 15px 40px rgba(123, 31, 162, 0.6),
         inset 0 2px 0 rgba(255, 255, 255, 0.3);
 }
 
@@ -587,13 +593,13 @@ header {
 }
 
 .filter-option:hover {
-    background: var(--lemon-light);
+    background: var(--yellow-light);
 }
 
 .filter-option input {
     width: 18px;
     height: 18px;
-    accent-color: var(--sky-blue-dark);
+    accent-color: var(--purple);
 }
 
 /* ========================================
@@ -618,7 +624,7 @@ header {
 .title-decoration {
     width: 50px;
     height: 3px;
-    background: linear-gradient(90deg, var(--sky-blue) 0%, var(--lemon-dark) 100%);
+    background: linear-gradient(90deg, var(--purple) 0%, var(--green) 100%);
     border-radius: 2px;
 }
 
@@ -644,7 +650,7 @@ header {
 .grid-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-    border-color: var(--sky-blue);
+    border-color: var(--purple);
 }
 
 .grid-card .category-badge {
@@ -759,14 +765,14 @@ footer {
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--lemon-light);
+    background: var(--yellow-light);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--sky-blue);
+    background: var(--purple);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--sky-blue-dark);
+    background: var(--purple-dark);
 }
