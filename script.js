@@ -225,9 +225,23 @@ function populateFilters() {
         `;
         filterDropdown.appendChild(option);
     });
+    
+    // Add click handlers to prevent scroll
+    filterDropdown.querySelectorAll('.filter-option').forEach(label => {
+        label.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const checkbox = label.querySelector('input[type="checkbox"]');
+            checkbox.checked = !checkbox.checked;
+            handleFilterChange({ target: checkbox, preventDefault: () => {}, stopPropagation: () => {} });
+        });
+    });
 }
 
 function handleFilterChange(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
     const value = e.target.value;
     const isChecked = e.target.checked;
     
@@ -406,12 +420,11 @@ function createConfetti() {
 function setupEventListeners() {
     pickButton.addEventListener('click', spin);
     
-    filterToggle.addEventListener('click', () => {
+    filterToggle.addEventListener('click', (e) => {
+        e.preventDefault();
         filterDropdown.classList.toggle('hidden');
         filterToggle.classList.toggle('active');
     });
-    
-    filterDropdown.addEventListener('change', handleFilterChange);
     
     // Close filter dropdown when clicking outside
     document.addEventListener('click', (e) => {
@@ -496,8 +509,16 @@ function populateTagSelect() {
         const label = document.createElement('label');
         label.className = 'tag-checkbox';
         label.innerHTML = `
+            <span class="checkmark"></span>
             <input type="checkbox" value="${tag}" name="activityTag"> ${tag}
         `;
+        // Add click handler to toggle selected class
+        label.addEventListener('click', (e) => {
+            e.preventDefault();
+            const checkbox = label.querySelector('input[type="checkbox"]');
+            checkbox.checked = !checkbox.checked;
+            label.classList.toggle('selected', checkbox.checked);
+        });
         container.appendChild(label);
     });
     
@@ -513,11 +534,19 @@ function populateTagSelect() {
         const newTag = prompt('Enter new tag name:');
         if (newTag && newTag.trim()) {
             const label = document.createElement('label');
-            label.className = 'tag-checkbox';
+            label.className = 'tag-checkbox selected';
             label.innerHTML = `
+                <span class="checkmark"></span>
                 <input type="checkbox" value="${newTag.trim()}" name="activityTag" checked> ${newTag.trim()}
             `;
-            container.appendChild(label);
+            // Add click handler to new tag
+            label.addEventListener('click', (e) => {
+                e.preventDefault();
+                const checkbox = label.querySelector('input[type="checkbox"]');
+                checkbox.checked = !checkbox.checked;
+                label.classList.toggle('selected', checkbox.checked);
+            });
+            container.insertBefore(label, addTagBtn);
         }
     };
     container.appendChild(addTagBtn);
