@@ -317,15 +317,15 @@ function prepareReelForSpin() {
     slotReel.style.transition = 'none';
     slotReel.style.transform = 'translateY(0)';
     
-    // Create multiple copies for the scrolling effect
-    // We want at least 5 full cycles worth of items
-    const copies = 6;
+    // Create MANY copies for the scrolling effect (enough for long scroll)
+    const copies = 15; // Lots of copies so we never run out
     for (let c = 0; c < copies; c++) {
         filteredActivities.forEach((activity, idx) => {
             const item = document.createElement('div');
             item.className = 'slot-item';
             item.textContent = activity.name;
             item.dataset.index = idx;
+            item.dataset.copy = c;
             slotReel.appendChild(item);
         });
     }
@@ -333,28 +333,23 @@ function prepareReelForSpin() {
 
 async function suspensefulSpin(winnerIndex, selectedActivity) {
     const slotMachine = document.querySelector('.slot-machine');
-    const container = document.querySelector('.container');
     const itemHeight = 60; // Must match CSS
     const totalItems = filteredActivities.length;
     
-    // Calculate final position (land on winner after multiple spins)
-    const fullSpins = 4; // Number of complete cycles
-    const targetItemPosition = fullSpins * totalItems + winnerIndex;
-    const finalOffset = targetItemPosition * itemHeight;
+    // Calculate final position (land on winner in the middle copies)
+    const targetCopy = 8; // Land in copy 8 (middle-ish)
+    const finalOffset = (targetCopy * totalItems + winnerIndex) * itemHeight;
     
     // Add excitement effects
     slotMachine.classList.add('spinning-active');
     
-    // Phase 1: FAST SPIN (accelerate then maintain)
-    await fastSpinPhase(itemHeight, totalItems, 2000);
+    // Single continuous animation with multiple phases
+    await continuousSpinAnimation(finalOffset, itemHeight, totalItems, winnerIndex);
     
-    // Phase 2: SLOWDOWN with visible "almost there" moments
-    await slowdownPhase(finalOffset, itemHeight, winnerIndex, totalItems, 4000);
-    
-    // Phase 3: Final landing with bounce
+    // Phase: Final landing with bounce
     await landingBounce(finalOffset, itemHeight);
     
-    // Phase 4: WINNER REVEAL!
+    // Phase: WINNER REVEAL!
     slotMachine.classList.remove('spinning-active');
     await revealWinner(selectedActivity);
     
@@ -364,125 +359,68 @@ async function suspensefulSpin(winnerIndex, selectedActivity) {
     pickButton.classList.remove('spinning');
 }
 
-async function fastSpinPhase(itemHeight, totalItems, duration) {
+async function continuousSpinAnimation(finalOffset, itemHeight, totalItems, winnerIndex) {
     const slotMachine = document.querySelector('.slot-machine');
-    slotMachine.classList.add('intense-spin');
-    
+    const totalDuration = 6000; // 6 seconds total
     const startTime = Date.now();
-    const maxSpeed = 25; // pixels per frame at peak
-    let position = 0;
+    
+    // Start position
+    let currentPos = 0;
     
     return new Promise(resolve => {
         function animate() {
             const elapsed = Date.now() - startTime;
-            const progress = Math.min(elapsed / duration, 1);
+            const progress = Math.min(elapsed / totalDuration, 1);
             
-            // Speed curve: accelerate to max, then maintain
-            let speed;
+            // Custom easing curve for suspense:
+            // - 0-30%: Fast acceleration and maintain speed
+            // - 30-70%: Gradual slowdown (the suspenseful part)
+            // - 70-95%: Really slow (almost stopping)
+            // - 95-100%: Final creep to target
+            
+            let easedProgress;
             if (progress < 0.3) {
-                // Accelerate
-                speed = maxSpeed * (progress / 0.3);
-            } else {
-                // Maintain fast speed
-                speed = maxSpeed;
-            }
-            
-            position += speed;
-            slotReel.style.transform = `translateY(-${position}px)`;
-            
-            // Wrap around if needed
-            const maxPosition = itemHeight * totalItems * 2;
-            if (position > maxPosition) {
-                position -= itemHeight * totalItems;
-                slotReel.style.transition = 'none';
-                slotReel.style.transform = `translateY(-${position}px)`;
-            }
-            
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            } else {
-                slotMachine.classList.remove('intense-spin');
-                resolve();
-            }
-        }
-        requestAnimationFrame(animate);
-    });
-}
-
-async function slowdownPhase(finalOffset, itemHeight, winnerIndex, totalItems, duration) {
-    const slotMachine = document.querySelector('.slot-machine');
-    const currentTransform = slotReel.style.transform;
-    const currentPos = parseFloat(currentTransform.match(/-?[\d.]+/)?.[0] || 0);
-    
-    // Make sure we're heading toward a position that will land on winner
-    // Calculate how far we need to go
-    let targetPos = finalOffset;
-    
-    // If current position is already past target, add more spins
-    while (targetPos < currentPos) {
-        targetPos += totalItems * itemHeight;
-    }
-    
-    // Add a bit more distance for longer slowdown
-    targetPos += totalItems * itemHeight;
-    
-    const distance = targetPos - currentPos;
-    const startTime = Date.now();
-    const startPos = currentPos;
-    
-    // Track "near miss" highlights
-    let lastHighlightedIndex = -1;
-    
-    return new Promise(resolve => {
-        function animate() {
-            const elapsed = Date.now() - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            // DRAMATIC easing: fast at start, VERY slow at end
-            // Using custom curve that really slows down at the end
-            let easeProgress;
-            if (progress < 0.5) {
-                // First half: still moving fairly quick
-                easeProgress = progress * 0.7;
-            } else if (progress < 0.8) {
-                // Getting slower
-                easeProgress = 0.35 + (progress - 0.5) * 0.4;
+                // Fast phase - cubic ease in
+                easedProgress = Math.pow(progress / 0.3, 0.7) * 0.4;
+            } else if (progress < 0.7) {
+                // Gradual slowdown
+                easedProgress = 0.4 + (progress - 0.3) * 0.75;
             } else if (progress < 0.95) {
-                // Really slow now - the "come on come on" moment
-                easeProgress = 0.47 + (progress - 0.8) * 0.3;
+                // Really slow - building tension
+                easedProgress = 0.7 + (progress - 0.7) * 0.8;
             } else {
                 // Final creep
-                easeProgress = 0.515 + (progress - 0.95) * 1.0;
+                easedProgress = 0.9 + (progress - 0.95) * 2;
             }
             
-            // Apply exponential easing on top for smoothness
-            const easedProgress = 1 - Math.pow(1 - progress, 3);
-            const position = startPos + distance * easedProgress;
+            currentPos = finalOffset * easedProgress;
+            slotReel.style.transform = `translateY(-${currentPos}px)`;
             
-            slotReel.style.transform = `translateY(-${position}px)`;
+            // Calculate which item is currently centered
+            const centerOffset = 30;
+            const currentItemIndex = Math.round((currentPos + centerOffset) / itemHeight) % totalItems;
             
-            // Calculate which item is currently visible (centered)
-            const centerOffset = 30; // Half the viewport height roughly
-            const currentItemIndex = Math.round((position + centerOffset) / itemHeight) % totalItems;
-            
-            // Highlight "near miss" items (items close to winner)
-            highlightNearMiss(currentItemIndex, winnerIndex, totalItems, progress);
-            
-            // Add tension effects as we slow down
-            if (progress > 0.7) {
+            // Apply visual effects based on phase
+            if (progress < 0.3) {
+                // Fast phase
+                slotMachine.classList.add('intense-spin');
+                slotMachine.classList.remove('almost-there', 'so-close');
+            } else if (progress < 0.7) {
+                slotMachine.classList.remove('intense-spin');
                 slotMachine.classList.add('almost-there');
+                slotMachine.classList.remove('so-close');
+            } else {
+                slotMachine.classList.remove('intense-spin', 'almost-there');
+                slotMachine.classList.add('so-close');
                 
-                // Pulse more intensely as we get closer
-                if (progress > 0.9) {
-                    slotMachine.classList.add('so-close');
-                }
+                // Highlight near-winner items
+                highlightNearMiss(currentItemIndex, winnerIndex, totalItems, progress);
             }
             
             if (progress < 1) {
                 requestAnimationFrame(animate);
             } else {
-                slotMachine.classList.remove('almost-there');
-                slotMachine.classList.remove('so-close');
+                slotMachine.classList.remove('intense-spin', 'almost-there', 'so-close');
                 resolve();
             }
         }
