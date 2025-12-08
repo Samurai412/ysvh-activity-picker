@@ -571,13 +571,29 @@ function populateAdminActivityList() {
                 <div class="activity-name">${activity.name}</div>
                 <div class="activity-category">${tagsDisplay}${isCustom ? ' • Custom' : ''}</div>
             </div>
-            <button class="delete-btn" data-index="${index}" title="Delete">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                </svg>
-            </button>
+            <div class="activity-actions">
+                <button class="edit-btn" data-index="${index}" title="Edit Tags">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </button>
+                <button class="delete-btn" data-index="${index}" title="Delete">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                    </svg>
+                </button>
+            </div>
         `;
         adminActivityList.appendChild(item);
+    });
+    
+    // Add edit handlers
+    adminActivityList.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const index = parseInt(e.currentTarget.dataset.index);
+            openEditTagsModal(index);
+        });
     });
     
     // Add delete handlers
@@ -586,6 +602,130 @@ function populateAdminActivityList() {
             const index = parseInt(e.currentTarget.dataset.index);
             deleteActivity(index);
         });
+    });
+}
+
+// ========================================
+// Edit Tags Modal
+// ========================================
+let editingActivityIndex = null;
+
+function openEditTagsModal(index) {
+    const activity = currentActivities[index];
+    if (!activity) return;
+    
+    editingActivityIndex = index;
+    const activityTags = getActivityTags(activity);
+    const allTags = getTags();
+    
+    // Create modal content
+    const modalContent = `
+        <div class="edit-tags-modal" id="editTagsModal">
+            <div class="edit-tags-overlay" id="editTagsOverlay"></div>
+            <div class="edit-tags-panel">
+                <button class="edit-tags-close" id="editTagsClose">&times;</button>
+                <h3>Edit Tags for "${activity.name}"</h3>
+                <div class="edit-tags-container" id="editTagsContainer">
+                    <!-- Tags will be populated here -->
+                </div>
+                <div class="edit-tags-actions">
+                    <button class="admin-btn" id="cancelEditTags">Cancel</button>
+                    <button class="admin-btn add-btn" id="saveEditTags">Save Tags</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+    
+    const editTagsModal = document.getElementById('editTagsModal');
+    const editTagsContainer = document.getElementById('editTagsContainer');
+    const editTagsClose = document.getElementById('editTagsClose');
+    const editTagsOverlay = document.getElementById('editTagsOverlay');
+    const cancelEditTags = document.getElementById('cancelEditTags');
+    const saveEditTags = document.getElementById('saveEditTags');
+    
+    // Populate tags
+    allTags.forEach(tag => {
+        const isSelected = activityTags.includes(tag);
+        const label = document.createElement('label');
+        label.className = `tag-checkbox${isSelected ? ' selected' : ''}`;
+        label.innerHTML = `
+            <span class="checkmark"></span>
+            <span class="tag-text">${tag}</span>
+            <input type="checkbox" value="${tag}" name="editTag" ${isSelected ? 'checked' : ''} style="display:none;">
+        `;
+        label.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const checkbox = label.querySelector('input[type="checkbox"]');
+            checkbox.checked = !checkbox.checked;
+            label.classList.toggle('selected', checkbox.checked);
+        });
+        editTagsContainer.appendChild(label);
+    });
+    
+    // Add new tag button
+    const addTagBtn = document.createElement('button');
+    addTagBtn.type = 'button';
+    addTagBtn.className = 'admin-btn add-tag-btn';
+    addTagBtn.textContent = '+ New Tag';
+    addTagBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const newTag = prompt('Enter new tag name:');
+        if (newTag && newTag.trim()) {
+            const label = document.createElement('label');
+            label.className = 'tag-checkbox selected';
+            label.innerHTML = `
+                <span class="checkmark"></span>
+                <span class="tag-text">${newTag.trim()}</span>
+                <input type="checkbox" value="${newTag.trim()}" name="editTag" checked style="display:none;">
+            `;
+            label.addEventListener('click', (evt) => {
+                evt.preventDefault();
+                evt.stopPropagation();
+                const checkbox = label.querySelector('input[type="checkbox"]');
+                checkbox.checked = !checkbox.checked;
+                label.classList.toggle('selected', checkbox.checked);
+            });
+            editTagsContainer.insertBefore(label, addTagBtn);
+        }
+    });
+    editTagsContainer.appendChild(addTagBtn);
+    
+    // Close handlers
+    const closeEditModal = () => {
+        editTagsModal.remove();
+        editingActivityIndex = null;
+    };
+    
+    editTagsClose.addEventListener('click', closeEditModal);
+    editTagsOverlay.addEventListener('click', closeEditModal);
+    cancelEditTags.addEventListener('click', closeEditModal);
+    
+    // Save handler
+    saveEditTags.addEventListener('click', async () => {
+        const selectedTagCheckboxes = editTagsContainer.querySelectorAll('input[name="editTag"]:checked');
+        const newTags = Array.from(selectedTagCheckboxes).map(cb => cb.value);
+        
+        if (newTags.length === 0) {
+            alert('Please select at least one tag');
+            return;
+        }
+        
+        currentActivities[editingActivityIndex].tags = newTags;
+        // Remove old category if exists
+        delete currentActivities[editingActivityIndex].category;
+        
+        const saved = await saveActivitiesToFirebase();
+        if (saved) {
+            closeEditModal();
+            refreshUI();
+            populateAdminActivityList();
+        } else {
+            alert('Failed to save changes');
+        }
     });
 }
 

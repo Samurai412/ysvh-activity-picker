@@ -1199,6 +1199,30 @@ footer {
     color: var(--gray);
 }
 
+.admin-activity-item .activity-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.admin-activity-item .edit-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: #e3f2fd;
+    color: var(--sky-blue);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.admin-activity-item .edit-btn:hover {
+    background: var(--sky-blue);
+    color: var(--white);
+}
+
 .admin-activity-item .delete-btn {
     width: 30px;
     height: 30px;
@@ -1269,4 +1293,93 @@ footer {
     .backup-buttons .admin-btn {
         width: 100%;
     }
+}
+
+/* Edit Tags Modal */
+.edit-tags-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+
+.edit-tags-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.edit-tags-panel {
+    position: relative;
+    background: var(--white);
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+.edit-tags-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f0f0f0;
+    color: var(--dark);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.edit-tags-close:hover {
+    background: var(--purple);
+    color: var(--white);
+}
+
+.edit-tags-panel h3 {
+    font-family: var(--font-display);
+    color: var(--purple);
+    margin-bottom: 1.5rem;
+    padding-right: 2rem;
+}
+
+.edit-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.edit-tags-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.edit-tags-actions .admin-btn {
+    padding: 0.8rem 1.5rem;
 }
