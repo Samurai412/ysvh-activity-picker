@@ -59,18 +59,56 @@
                         </span>
                     </button>
                     
-                    <div class="filter-container">
-                        <button class="filter-toggle" id="filterToggle">
-                            <span>Filter by Tags</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M6 9l6 6 6-6"/>
-                            </svg>
-                        </button>
-                        <div class="filter-dropdown hidden" id="filterDropdown">
-                            <label class="filter-option">
-                                <input type="checkbox" value="all" checked> All Activities
-                            </label>
+                    <div class="filter-buttons">
+                        <div class="filter-container">
+                            <button class="filter-toggle" id="filterToggle">
+                                <span>Filter by Tags</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </button>
+                            <div class="filter-dropdown hidden" id="filterDropdown">
+                                <label class="filter-option">
+                                    <input type="checkbox" value="all" checked> All Activities
+                                </label>
+                            </div>
                         </div>
+                        
+                        <button class="favorites-toggle" id="favoritesToggle" title="Show favorites only">
+                            <span class="fav-icon">⭐</span>
+                            <span class="fav-text">Favorites</span>
+                        </button>
+                        
+                        <button class="stats-toggle" id="statsToggle" title="View stats & history">
+                            <span class="stats-icon">📊</span>
+                            <span class="stats-text">Stats</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats & History Panel (collapsible) -->
+            <div class="stats-panel hidden" id="statsPanel">
+                <div class="stats-header">
+                    <h3>📊 Spin Statistics</h3>
+                    <button class="close-stats" id="closeStats">&times;</button>
+                </div>
+                <div class="stats-content">
+                    <div class="stats-section">
+                        <h4>🕐 Recent History</h4>
+                        <div class="history-list" id="historyList">
+                            <p class="no-history">No recent picks yet!</p>
+                        </div>
+                    </div>
+                    <div class="stats-section">
+                        <h4>🏆 Most Picked</h4>
+                        <div class="top-picks" id="topPicks">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    <div class="stats-section">
+                        <h4>📈 Total Spins</h4>
+                        <div class="total-spins" id="totalSpins">0</div>
                     </div>
                 </div>
             </div>
@@ -78,7 +116,7 @@
             <section class="activity-grid-section">
                 <h2 class="section-title">
                     <span class="title-decoration"></span>
-                    All Activities
+                    <span id="gridTitle">All Activities</span>
                     <span class="title-decoration"></span>
                 </h2>
                 <div class="activity-grid" id="activityGrid">

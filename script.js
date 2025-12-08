@@ -47,6 +47,10 @@ let currentActivities = [];
 let filteredActivities = [];
 let isAdminUnlocked = false;
 let isLoading = true;
+let favorites = new Set(); // Activity names that are favorited
+let recentHistory = []; // Last 10 picked activities
+let spinStats = {}; // { activityName: count }
+let showFavoritesOnly = false;
 
 // ========================================
 // Firebase Functions
@@ -64,6 +68,9 @@ async function loadActivitiesFromFirebase() {
             currentActivities = [...activities];
             await saveActivitiesToFirebase();
         }
+        
+        // Load extras (favorites, history, stats)
+        await loadExtrasFromFirebase();
     } catch (error) {
         console.error('Error loading from Firebase:', error);
         // Fallback to default activities
@@ -72,6 +79,75 @@ async function loadActivitiesFromFirebase() {
     isLoading = false;
     hideLoadingState();
     updateFilteredActivities();
+}
+
+async function loadExtrasFromFirebase() {
+    try {
+        // Load favorites
+        const favResponse = await fetch(`${FIREBASE_URL}/favorites.json`);
+        const favData = await favResponse.json();
+        if (favData && Array.isArray(favData)) {
+            favorites = new Set(favData);
+        }
+        
+        // Load recent history
+        const histResponse = await fetch(`${FIREBASE_URL}/recentHistory.json`);
+        const histData = await histResponse.json();
+        if (histData && Array.isArray(histData)) {
+            recentHistory = histData;
+        }
+        
+        // Load spin stats
+        const statsResponse = await fetch(`${FIREBASE_URL}/spinStats.json`);
+        const statsData = await statsResponse.json();
+        if (statsData && typeof statsData === 'object') {
+            spinStats = statsData;
+        }
+    } catch (error) {
+        console.error('Error loading extras from Firebase:', error);
+    }
+}
+
+async function saveFavoritesToFirebase() {
+    try {
+        await fetch(`${FIREBASE_URL}/favorites.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify([...favorites])
+        });
+        return true;
+    } catch (error) {
+        console.error('Error saving favorites:', error);
+        return false;
+    }
+}
+
+async function saveHistoryToFirebase() {
+    try {
+        await fetch(`${FIREBASE_URL}/recentHistory.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(recentHistory)
+        });
+        return true;
+    } catch (error) {
+        console.error('Error saving history:', error);
+        return false;
+    }
+}
+
+async function saveStatsToFirebase() {
+    try {
+        await fetch(`${FIREBASE_URL}/spinStats.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(spinStats)
+        });
+        return true;
+    } catch (error) {
+        console.error('Error saving stats:', error);
+        return false;
+    }
 }
 
 async function saveActivitiesToFirebase() {
@@ -192,18 +268,45 @@ function populateActivityGrid() {
     filteredActivities.forEach(activity => {
         const tags = getActivityTags(activity);
         const tagsHtml = tags.map(tag => `<span class="tag-badge">${tag}</span>`).join('');
+        const isFav = favorites.has(activity.name);
+        const pickCount = spinStats[activity.name] || 0;
         
-        const card = document.createElement('a');
-        card.href = activity.url;
-        card.target = '_blank';
-        card.className = 'grid-card';
-        card.innerHTML = `
-            <div class="tags-container">${tagsHtml}</div>
-            <h3>${activity.name}</h3>
-            <p>${activity.description}</p>
+        const cardWrapper = document.createElement('div');
+        cardWrapper.className = 'grid-card-wrapper';
+        
+        cardWrapper.innerHTML = `
+            <button class="favorite-btn ${isFav ? 'active' : ''}" data-name="${activity.name}" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">
+                ${isFav ? '★' : '☆'}
+            </button>
+            <a href="${activity.url}" target="_blank" class="grid-card">
+                <div class="tags-container">${tagsHtml}</div>
+                <h3>${activity.name}</h3>
+                <p>${activity.description}</p>
+                ${pickCount > 0 ? `<span class="grid-pick-count">Picked ${pickCount}x</span>` : ''}
+            </a>
         `;
-        activityGrid.appendChild(card);
+        
+        // Add favorite click handler
+        const favBtn = cardWrapper.querySelector('.favorite-btn');
+        favBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleFavorite(activity.name);
+        });
+        
+        activityGrid.appendChild(cardWrapper);
     });
+    
+    // Update empty state if showing favorites only
+    if (showFavoritesOnly && filteredActivities.length === 0) {
+        activityGrid.innerHTML = `
+            <div class="empty-state">
+                <span class="empty-icon">⭐</span>
+                <p>No favorite activities yet!</p>
+                <p class="empty-hint">Click the ☆ on any activity to add it to favorites.</p>
+            </div>
+        `;
+    }
 }
 
 // ========================================
@@ -275,15 +378,22 @@ function handleFilterChange(e) {
 }
 
 function updateFilteredActivities() {
-    if (selectedTags.has('all')) {
-        filteredActivities = [...currentActivities];
-    } else {
-        // Filter activities that have at least one of the selected tags
-        filteredActivities = currentActivities.filter(a => {
+    let result = [...currentActivities];
+    
+    // Apply tag filter
+    if (!selectedTags.has('all')) {
+        result = result.filter(a => {
             const activityTags = getActivityTags(a);
             return activityTags.some(tag => selectedTags.has(tag));
         });
     }
+    
+    // Apply favorites filter
+    if (showFavoritesOnly) {
+        result = result.filter(a => favorites.has(a.name));
+    }
+    
+    filteredActivities = result;
     
     populateSlotReel();
     populateActivityGrid();
@@ -600,10 +710,117 @@ function showSelectedActivity(activity) {
     const tags = getActivityTags(activity);
     categoryBadge.innerHTML = tags.map(tag => `<span class="selected-tag">${tag}</span>`).join('');
     
+    // Add spin stats display
+    const pickCount = spinStats[activity.name] || 0;
+    const statsHtml = `<span class="pick-count">Picked ${pickCount + 1} time${pickCount === 0 ? '' : 's'}</span>`;
+    
+    // Check if it was recently picked
+    const wasRecentlyPicked = recentHistory.includes(activity.name);
+    const recentHtml = wasRecentlyPicked ? '<span class="recent-alert">🔄 We just did this!</span>' : '';
+    
+    // Add stats info after tags
+    categoryBadge.innerHTML += statsHtml + recentHtml;
+    
     activityCard.classList.remove('hidden');
     activityCard.classList.add('revealed');
     
+    // Track this spin in stats
+    trackSpin(activity);
+    
     // Confetti already triggered in epicReveal
+}
+
+// ========================================
+// Favorites System
+// ========================================
+function toggleFavorite(activityName) {
+    if (favorites.has(activityName)) {
+        favorites.delete(activityName);
+    } else {
+        favorites.add(activityName);
+    }
+    saveFavoritesToFirebase();
+    updateFilteredActivities();
+}
+
+function isFavorite(activityName) {
+    return favorites.has(activityName);
+}
+
+function toggleFavoritesFilter() {
+    showFavoritesOnly = !showFavoritesOnly;
+    updateFilteredActivities();
+    
+    const favBtn = document.getElementById('favoritesToggle');
+    if (favBtn) {
+        favBtn.classList.toggle('active', showFavoritesOnly);
+    }
+}
+
+// ========================================
+// Spin Stats & History
+// ========================================
+async function trackSpin(activity) {
+    // Update spin stats
+    if (!spinStats[activity.name]) {
+        spinStats[activity.name] = 0;
+    }
+    spinStats[activity.name]++;
+    
+    // Update recent history (keep last 10)
+    recentHistory = recentHistory.filter(name => name !== activity.name); // Remove if already exists
+    recentHistory.unshift(activity.name);
+    if (recentHistory.length > 10) {
+        recentHistory = recentHistory.slice(0, 10);
+    }
+    
+    // Save to Firebase
+    await saveStatsToFirebase();
+    await saveHistoryToFirebase();
+    
+    // Update history panel if visible
+    updateHistoryPanel();
+}
+
+function updateHistoryPanel() {
+    const historyList = document.getElementById('historyList');
+    if (!historyList) return;
+    
+    historyList.innerHTML = '';
+    
+    if (recentHistory.length === 0) {
+        historyList.innerHTML = '<p class="no-history">No recent picks yet!</p>';
+        return;
+    }
+    
+    recentHistory.forEach((name, index) => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `
+            <span class="history-number">#${index + 1}</span>
+            <span class="history-name">${name}</span>
+            <span class="history-count">${spinStats[name] || 0}x</span>
+        `;
+        historyList.appendChild(item);
+    });
+}
+
+function getMostPickedActivities(limit = 5) {
+    const sorted = Object.entries(spinStats)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit);
+    return sorted;
+}
+
+function getRarestPick() {
+    const allActivities = currentActivities.map(a => a.name);
+    const unpicked = allActivities.filter(name => !spinStats[name]);
+    if (unpicked.length > 0) {
+        return { name: unpicked[0], count: 0 };
+    }
+    
+    const sorted = Object.entries(spinStats).sort((a, b) => a[1] - b[1]);
+    return sorted.length > 0 ? { name: sorted[0][0], count: sorted[0][1] } : null;
 }
 
 // ========================================
@@ -654,6 +871,35 @@ function setupEventListeners() {
         filterToggle.classList.toggle('active');
     });
     
+    // Favorites toggle
+    const favoritesToggle = document.getElementById('favoritesToggle');
+    if (favoritesToggle) {
+        favoritesToggle.addEventListener('click', () => {
+            toggleFavoritesFilter();
+            updateGridTitle();
+        });
+    }
+    
+    // Stats panel toggle
+    const statsToggle = document.getElementById('statsToggle');
+    const statsPanel = document.getElementById('statsPanel');
+    const closeStats = document.getElementById('closeStats');
+    
+    if (statsToggle && statsPanel) {
+        statsToggle.addEventListener('click', () => {
+            statsPanel.classList.toggle('hidden');
+            if (!statsPanel.classList.contains('hidden')) {
+                updateStatsPanel();
+            }
+        });
+    }
+    
+    if (closeStats && statsPanel) {
+        closeStats.addEventListener('click', () => {
+            statsPanel.classList.add('hidden');
+        });
+    }
+    
     // Close filter dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!filterToggle.contains(e.target) && !filterDropdown.contains(e.target)) {
@@ -669,6 +915,45 @@ function setupEventListeners() {
             spin();
         }
     });
+}
+
+function updateGridTitle() {
+    const gridTitle = document.getElementById('gridTitle');
+    if (gridTitle) {
+        if (showFavoritesOnly) {
+            gridTitle.textContent = '⭐ Favorite Activities';
+        } else {
+            gridTitle.textContent = 'All Activities';
+        }
+    }
+}
+
+function updateStatsPanel() {
+    updateHistoryPanel();
+    
+    // Update top picks
+    const topPicks = document.getElementById('topPicks');
+    if (topPicks) {
+        const mostPicked = getMostPickedActivities(5);
+        if (mostPicked.length === 0) {
+            topPicks.innerHTML = '<p class="no-stats">No data yet!</p>';
+        } else {
+            topPicks.innerHTML = mostPicked.map(([name, count], index) => `
+                <div class="top-pick-item">
+                    <span class="rank">${['🥇', '🥈', '🥉', '4.', '5.'][index]}</span>
+                    <span class="name">${name}</span>
+                    <span class="count">${count}x</span>
+                </div>
+            `).join('');
+        }
+    }
+    
+    // Update total spins
+    const totalSpins = document.getElementById('totalSpins');
+    if (totalSpins) {
+        const total = Object.values(spinStats).reduce((sum, count) => sum + count, 0);
+        totalSpins.textContent = total;
+    }
 }
 
 // ========================================
