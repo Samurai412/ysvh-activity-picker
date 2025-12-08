@@ -498,23 +498,27 @@ function checkPasscode() {
 
 function populateTagSelect() {
     const allTags = getTags();
-    newActivityCategory.innerHTML = '';
+    const container = document.getElementById('newActivityCategory');
     
-    // Create tag checkboxes container
-    const container = document.createElement('div');
-    container.className = 'tag-checkbox-container';
-    container.id = 'tagCheckboxContainer';
+    if (!container) {
+        console.error('Tag container not found');
+        return;
+    }
+    
+    container.innerHTML = '';
     
     allTags.forEach(tag => {
         const label = document.createElement('label');
         label.className = 'tag-checkbox';
         label.innerHTML = `
             <span class="checkmark"></span>
-            <input type="checkbox" value="${tag}" name="activityTag"> ${tag}
+            <span class="tag-text">${tag}</span>
+            <input type="checkbox" value="${tag}" name="activityTag" style="display:none;">
         `;
         // Add click handler to toggle selected class
         label.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             const checkbox = label.querySelector('input[type="checkbox"]');
             checkbox.checked = !checkbox.checked;
             label.classList.toggle('selected', checkbox.checked);
@@ -522,26 +526,27 @@ function populateTagSelect() {
         container.appendChild(label);
     });
     
-    // Replace the select with checkboxes
-    newActivityCategory.parentNode.replaceChild(container, newActivityCategory);
-    
     // Add "new tag" button
     const addTagBtn = document.createElement('button');
     addTagBtn.type = 'button';
     addTagBtn.className = 'admin-btn add-tag-btn';
     addTagBtn.textContent = '+ Add New Tag';
-    addTagBtn.onclick = () => {
+    addTagBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const newTag = prompt('Enter new tag name:');
         if (newTag && newTag.trim()) {
             const label = document.createElement('label');
             label.className = 'tag-checkbox selected';
             label.innerHTML = `
                 <span class="checkmark"></span>
-                <input type="checkbox" value="${newTag.trim()}" name="activityTag" checked> ${newTag.trim()}
+                <span class="tag-text">${newTag.trim()}</span>
+                <input type="checkbox" value="${newTag.trim()}" name="activityTag" checked style="display:none;">
             `;
             // Add click handler to new tag
-            label.addEventListener('click', (e) => {
-                e.preventDefault();
+            label.addEventListener('click', (evt) => {
+                evt.preventDefault();
+                evt.stopPropagation();
                 const checkbox = label.querySelector('input[type="checkbox"]');
                 checkbox.checked = !checkbox.checked;
                 label.classList.toggle('selected', checkbox.checked);
