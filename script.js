@@ -333,7 +333,7 @@ async function dramaticSelection(selectedActivity) {
 
 async function intenseFastFlicker(duration) {
     const slotMachine = document.querySelector('.slot-machine');
-    const container = document.querySelector('.app-container');
+    const container = document.querySelector('.container');
     
     // Add visual intensity
     slotMachine.classList.add('intense-spin');
@@ -420,7 +420,7 @@ async function dramaticPause(duration) {
 
 async function epicReveal(activity) {
     const slotMachine = document.querySelector('.slot-machine');
-    const container = document.querySelector('.app-container');
+    const container = document.querySelector('.container');
     
     // Flash effect
     container.classList.add('flash-reveal');
