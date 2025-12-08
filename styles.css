@@ -729,6 +729,206 @@ header {
     }
 }
 
+/* Confetti Burst Animation */
+.confetti-burst {
+    animation: confetti-explode 2.5s ease-out forwards !important;
+}
+
+@keyframes confetti-explode {
+    0% {
+        transform: translate(0, 0) rotate(0deg) scale(0);
+        opacity: 1;
+    }
+    20% {
+        transform: translate(calc((var(--random-x, 50) - 50) * 3vw), calc((var(--random-y, 50) - 50) * 3vh)) rotate(180deg) scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(calc((var(--random-x, 50) - 50) * 5vw), calc(50vh + var(--random-y, 50) * 2vh)) rotate(720deg) scale(0.5);
+        opacity: 0;
+    }
+}
+
+.confetti-sides {
+    animation: confetti-side 2.5s ease-out forwards !important;
+}
+
+@keyframes confetti-side {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(80vh) rotate(540deg);
+        opacity: 0;
+    }
+}
+
+.confetti-rain {
+    animation: confetti-fall 3s ease-out forwards !important;
+}
+
+/* ========================================
+   DRAMATIC SPIN EFFECTS
+   ======================================== */
+
+/* Screen Shake */
+.screen-shake {
+    animation: screen-shake 0.1s ease-in-out infinite;
+}
+
+@keyframes screen-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px) rotate(-0.5deg); }
+    75% { transform: translateX(3px) rotate(0.5deg); }
+}
+
+/* Intense Spin - glowing border animation */
+.intense-spin {
+    animation: intense-glow 0.15s ease-in-out infinite alternate !important;
+    box-shadow: 
+        0 0 30px var(--yellow),
+        0 0 60px var(--sky-blue),
+        0 0 90px var(--purple),
+        inset 0 0 30px rgba(255, 255, 255, 0.2) !important;
+}
+
+@keyframes intense-glow {
+    0% {
+        box-shadow: 
+            0 0 30px var(--yellow),
+            0 0 60px var(--sky-blue),
+            0 0 90px var(--purple);
+        transform: scale(1);
+    }
+    100% {
+        box-shadow: 
+            0 0 50px var(--sky-blue),
+            0 0 80px var(--purple),
+            0 0 110px var(--yellow);
+        transform: scale(1.02);
+    }
+}
+
+/* Slot item states */
+.slot-item.active {
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.slot-item.flickering {
+    color: var(--purple);
+    text-shadow: 0 0 10px rgba(123, 31, 162, 0.5);
+    animation: text-flicker 0.05s ease infinite;
+}
+
+@keyframes text-flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.slot-item.slowing {
+    color: var(--sky-blue-dark);
+    font-size: 1.3rem;
+    text-shadow: 0 0 15px rgba(41, 182, 246, 0.6);
+}
+
+.slot-item.winner-preview {
+    color: var(--green);
+    font-size: 1.4rem;
+    text-shadow: 0 0 20px rgba(76, 175, 80, 0.7);
+}
+
+.slot-item.winner {
+    color: var(--yellow);
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-shadow: 
+        0 0 10px var(--yellow),
+        0 0 20px var(--yellow),
+        0 0 30px rgba(255, 225, 25, 0.5);
+    animation: winner-pulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes winner-pulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.05); }
+}
+
+/* Near stop pulse */
+.near-stop {
+    animation: near-stop-pulse 0.3s ease !important;
+}
+
+@keyframes near-stop-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); box-shadow: 0 0 40px var(--sky-blue); }
+    100% { transform: scale(1); }
+}
+
+/* Dramatic Pause */
+.dramatic-pause {
+    animation: dramatic-hold 0.8s ease !important;
+}
+
+@keyframes dramatic-hold {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(0.98); }
+}
+
+/* Pulse Glow Effect */
+.pulse-glow {
+    animation: pulse-glow-anim 0.4s ease-in-out infinite !important;
+}
+
+@keyframes pulse-glow-anim {
+    0%, 100% {
+        box-shadow: 0 0 30px var(--purple);
+    }
+    50% {
+        box-shadow: 
+            0 0 50px var(--yellow),
+            0 0 80px var(--purple),
+            0 0 100px var(--sky-blue);
+    }
+}
+
+/* Winner Glow */
+.winner-glow {
+    box-shadow: 
+        0 0 40px var(--yellow),
+        0 0 80px var(--green),
+        0 0 120px var(--purple) !important;
+    animation: winner-glow-anim 0.3s ease-in-out infinite alternate !important;
+}
+
+@keyframes winner-glow-anim {
+    0% {
+        box-shadow: 
+            0 0 40px var(--yellow),
+            0 0 80px var(--green);
+    }
+    100% {
+        box-shadow: 
+            0 0 60px var(--yellow),
+            0 0 100px var(--green),
+            0 0 140px var(--purple);
+    }
+}
+
+/* Flash Reveal */
+.flash-reveal {
+    animation: flash-screen 0.5s ease;
+}
+
+@keyframes flash-screen {
+    0% { filter: brightness(1); }
+    15% { filter: brightness(2); }
+    30% { filter: brightness(1); }
+    45% { filter: brightness(1.5); }
+    100% { filter: brightness(1); }
+}
+
 /* ========================================
    Footer
    ======================================== */

@@ -290,7 +290,7 @@ function updateFilteredActivities() {
 }
 
 // ========================================
-// Slot Machine Spin
+// Slot Machine Spin - DRAMATIC VERSION
 // ========================================
 async function spin() {
     if (isSpinning || filteredActivities.length === 0) return;
@@ -301,62 +301,246 @@ async function spin() {
     activityCard.classList.add('hidden');
     activityCard.classList.remove('revealed');
     
-    // Random selection
+    // Random selection (decide winner now, but reveal dramatically)
     const randomIndex = Math.floor(Math.random() * filteredActivities.length);
     const selectedActivity = filteredActivities[randomIndex];
     
-    // Animation parameters
-    const itemHeight = 60; // Match CSS .slot-item height
-    const totalItems = filteredActivities.length;
-    const spins = 3; // Number of full spins
-    const targetPosition = (spins * totalItems + randomIndex) * itemHeight;
+    // Start the dramatic sequence
+    await dramaticSelection(selectedActivity);
+}
+
+async function dramaticSelection(selectedActivity) {
+    const slotMachine = document.querySelector('.slot-machine');
+    const container = document.querySelector('.slot-window');
     
-    // Easing function for slot machine effect
-    const duration = 4000; // 4 seconds
-    const startTime = performance.now();
+    // Phase 1: INTENSE FLICKERING (2 seconds)
+    await intenseFastFlicker(1500);
     
-    // Play sound effect (visual feedback instead)
-    createSpinEffect();
+    // Phase 2: SLOWDOWN with fake-outs (3 seconds)
+    await slowdownWithFakeouts(selectedActivity, 3000);
+    
+    // Phase 3: DRAMATIC PAUSE
+    await dramaticPause(800);
+    
+    // Phase 4: FINAL REVEAL
+    await epicReveal(selectedActivity);
+    
+    // Reset states
+    isSpinning = false;
+    pickButton.disabled = false;
+    pickButton.classList.remove('spinning');
+}
+
+async function intenseFastFlicker(duration) {
+    const slotMachine = document.querySelector('.slot-machine');
+    const container = document.querySelector('.app-container');
+    
+    // Add visual intensity
+    slotMachine.classList.add('intense-spin');
+    container.classList.add('screen-shake');
+    
+    const startTime = Date.now();
+    let flickerSpeed = 30; // Start very fast
     
     return new Promise(resolve => {
-        function animate(currentTime) {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
+        function flicker() {
+            const elapsed = Date.now() - startTime;
             
-            // Easing: fast start, slow end (cubic ease-out)
-            const easeOut = 1 - Math.pow(1 - progress, 3);
-            const currentPosition = targetPosition * easeOut;
-            
-            // Center the item in the viewport
-            const offset = currentPosition - 30; // Adjust for visual centering
-            slotReel.style.transform = `translateY(-${offset}px)`;
-            
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            } else {
-                // Animation complete
-                isSpinning = false;
-                pickButton.disabled = false;
-                pickButton.classList.remove('spinning');
+            if (elapsed < duration) {
+                // Show random activity
+                const randomAct = filteredActivities[Math.floor(Math.random() * filteredActivities.length)];
+                updateSlotDisplay(randomAct.name, 'flickering');
                 
-                // Show selected activity
-                showSelectedActivity(selectedActivity);
+                // Gradually slow down flicker
+                flickerSpeed = 30 + (elapsed / duration) * 100;
+                setTimeout(flicker, flickerSpeed);
+            } else {
+                slotMachine.classList.remove('intense-spin');
+                container.classList.remove('screen-shake');
                 resolve();
             }
         }
-        
-        requestAnimationFrame(animate);
+        flicker();
     });
 }
 
-function createSpinEffect() {
-    // Visual feedback during spin - flashing border
+async function slowdownWithFakeouts(winner, duration) {
     const slotMachine = document.querySelector('.slot-machine');
-    slotMachine.style.boxShadow = '0 0 30px var(--sky-blue), 0 20px 60px rgba(0, 0, 0, 0.3)';
     
+    // Create pool of activities for fake-outs (exclude winner initially)
+    const fakeoutPool = filteredActivities.filter(a => a.name !== winner.name);
+    const fakeoutCount = 4 + Math.floor(Math.random() * 3); // 4-6 fake-outs
+    
+    return new Promise(resolve => {
+        let i = 0;
+        const baseDelay = 200;
+        
+        function showNext() {
+            if (i < fakeoutCount) {
+                // Pick a random activity (not the winner until the end)
+                const fakeActivity = fakeoutPool[Math.floor(Math.random() * fakeoutPool.length)];
+                
+                updateSlotDisplay(fakeActivity.name, 'slowing');
+                slotMachine.classList.add('near-stop');
+                
+                // Each pause gets longer (building tension)
+                const delay = baseDelay + (i * 150) + (Math.random() * 100);
+                
+                // Pulse effect on near-miss
+                setTimeout(() => {
+                    slotMachine.classList.remove('near-stop');
+                    i++;
+                    showNext();
+                }, delay);
+            } else {
+                // Now show winner in slot
+                updateSlotDisplay(winner.name, 'winner-preview');
+                resolve();
+            }
+        }
+        showNext();
+    });
+}
+
+async function dramaticPause(duration) {
+    const slotMachine = document.querySelector('.slot-machine');
+    slotMachine.classList.add('dramatic-pause');
+    
+    // Pulse effect
+    slotMachine.classList.add('pulse-glow');
+    
+    return new Promise(resolve => {
+        setTimeout(() => {
+            slotMachine.classList.remove('dramatic-pause');
+            slotMachine.classList.remove('pulse-glow');
+            resolve();
+        }, duration);
+    });
+}
+
+async function epicReveal(activity) {
+    const slotMachine = document.querySelector('.slot-machine');
+    const container = document.querySelector('.app-container');
+    
+    // Flash effect
+    container.classList.add('flash-reveal');
+    slotMachine.classList.add('winner-glow');
+    
+    // Show the winner name with special styling
+    updateSlotDisplay(activity.name, 'winner');
+    
+    // Confetti explosion (more intense)
+    createEpicConfetti();
+    
+    // Small delay then show card
+    await sleep(500);
+    
+    // Show selected activity card with animation
+    showSelectedActivity(activity);
+    
+    // Clean up effects
     setTimeout(() => {
-        slotMachine.style.boxShadow = '';
-    }, 4000);
+        container.classList.remove('flash-reveal');
+        slotMachine.classList.remove('winner-glow');
+    }, 1500);
+}
+
+function updateSlotDisplay(text, state) {
+    // Update all slot items to show the current text with state styling
+    const displayItem = slotReel.querySelector('.slot-item.active') || slotReel.querySelector('.slot-item');
+    
+    if (displayItem) {
+        slotReel.querySelectorAll('.slot-item').forEach(item => {
+            item.classList.remove('active', 'flickering', 'slowing', 'winner-preview', 'winner');
+        });
+        displayItem.textContent = text;
+        displayItem.classList.add('active', state);
+    }
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function createSpinEffect() {
+    // Legacy - replaced by new dramatic effects
+}
+
+function createEpicConfetti() {
+    const colors = ['#ffe119', '#29b6f6', '#4caf50', '#7b1fa2', '#ffffff', '#9c4dcc', '#ff6b6b', '#ffd93d'];
+    const shapes = ['square', 'circle', 'triangle'];
+    
+    // First burst - center explosion
+    for (let i = 0; i < 80; i++) {
+        setTimeout(() => {
+            createConfettiPiece(colors, shapes, 'burst');
+        }, i * 10);
+    }
+    
+    // Second burst - sides
+    setTimeout(() => {
+        for (let i = 0; i < 60; i++) {
+            setTimeout(() => {
+                createConfettiPiece(colors, shapes, 'sides');
+            }, i * 15);
+        }
+    }, 300);
+    
+    // Continuous rain
+    setTimeout(() => {
+        for (let i = 0; i < 100; i++) {
+            setTimeout(() => {
+                createConfettiPiece(colors, shapes, 'rain');
+            }, i * 30);
+        }
+    }, 600);
+}
+
+function createConfettiPiece(colors, shapes, type) {
+    const confetti = document.createElement('div');
+    confetti.className = 'confetti';
+    
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+    const size = 6 + Math.random() * 12;
+    
+    let startX, startY, animClass;
+    
+    switch(type) {
+        case 'burst':
+            startX = 45 + Math.random() * 10;
+            startY = 30;
+            animClass = 'confetti-burst';
+            break;
+        case 'sides':
+            startX = Math.random() < 0.5 ? Math.random() * 20 : 80 + Math.random() * 20;
+            startY = 20 + Math.random() * 20;
+            animClass = 'confetti-sides';
+            break;
+        default:
+            startX = Math.random() * 100;
+            startY = -5;
+            animClass = 'confetti-rain';
+    }
+    
+    let borderRadius = shape === 'circle' ? '50%' : shape === 'triangle' ? '0' : '2px';
+    let clipPath = shape === 'triangle' ? 'polygon(50% 0%, 0% 100%, 100% 100%)' : 'none';
+    
+    confetti.style.cssText = `
+        left: ${startX}%;
+        top: ${startY}%;
+        width: ${size}px;
+        height: ${size}px;
+        background: ${color};
+        border-radius: ${borderRadius};
+        clip-path: ${clipPath};
+        animation-duration: ${2 + Math.random() * 2}s;
+    `;
+    confetti.classList.add(animClass);
+    
+    confettiContainer.appendChild(confetti);
+    
+    setTimeout(() => confetti.remove(), 4500);
 }
 
 // ========================================
@@ -374,8 +558,7 @@ function showSelectedActivity(activity) {
     activityCard.classList.remove('hidden');
     activityCard.classList.add('revealed');
     
-    // Trigger confetti
-    createConfetti();
+    // Confetti already triggered in epicReveal
 }
 
 // ========================================
