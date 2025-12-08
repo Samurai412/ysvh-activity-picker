@@ -87,6 +87,71 @@
             </section>
         </main>
 
+        <!-- Admin Button -->
+        <button class="admin-toggle" id="adminToggle" title="Admin Panel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+            </svg>
+        </button>
+
+        <!-- Admin Panel Modal -->
+        <div class="admin-modal hidden" id="adminModal">
+            <div class="admin-overlay" id="adminOverlay"></div>
+            <div class="admin-panel">
+                <button class="admin-close" id="adminClose">&times;</button>
+                
+                <!-- Passcode Screen -->
+                <div class="admin-passcode" id="adminPasscode">
+                    <h2>🔐 Admin Access</h2>
+                    <p>Enter passcode to manage activities</p>
+                    <div class="passcode-input-container">
+                        <input type="password" id="passcodeInput" maxlength="4" placeholder="••••" autocomplete="off">
+                        <button class="passcode-submit" id="passcodeSubmit">Unlock</button>
+                    </div>
+                    <p class="passcode-error hidden" id="passcodeError">Incorrect passcode</p>
+                </div>
+                
+                <!-- Admin Dashboard (hidden until unlocked) -->
+                <div class="admin-dashboard hidden" id="adminDashboard">
+                    <h2>⚙️ Activity Manager</h2>
+                    
+                    <!-- Add Activity Form -->
+                    <div class="admin-section">
+                        <h3>➕ Add New Activity</h3>
+                        <form id="addActivityForm" class="activity-form">
+                            <input type="text" id="newActivityName" placeholder="Activity Name" required>
+                            <input type="url" id="newActivityUrl" placeholder="https://example.com" required>
+                            <select id="newActivityCategory" required>
+                                <option value="">Select Category</option>
+                            </select>
+                            <input type="text" id="newActivityDescription" placeholder="Brief description" required>
+                            <button type="submit" class="admin-btn add-btn">Add Activity</button>
+                        </form>
+                    </div>
+                    
+                    <!-- Manage Activities -->
+                    <div class="admin-section">
+                        <h3>📋 Manage Activities</h3>
+                        <div class="admin-activity-list" id="adminActivityList">
+                            <!-- Activities listed here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Import/Export -->
+                    <div class="admin-section">
+                        <h3>💾 Backup & Restore</h3>
+                        <div class="backup-buttons">
+                            <button class="admin-btn" id="exportBtn">Export Activities</button>
+                            <button class="admin-btn" id="importBtn">Import Activities</button>
+                            <button class="admin-btn reset-btn" id="resetBtn">Reset to Default</button>
+                        </div>
+                        <input type="file" id="importFile" accept=".json" style="display: none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <footer>
             <p>Made with 💛 for YSVH Voice Chat</p>
         </footer>
