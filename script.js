@@ -41,7 +41,7 @@ const FIREBASE_URL = 'https://ysvh-activities-default-rtdb.europe-west1.firebase
 // ========================================
 // State
 // ========================================
-let selectedCategories = new Set(['all']);
+let selectedTags = new Set(['all']);
 let isSpinning = false;
 let currentActivities = [];
 let filteredActivities = [];
@@ -115,8 +115,26 @@ function hideLoadingState() {
     }
 }
 
-function getCategories() {
-    return [...new Set(currentActivities.map(a => a.category))].sort();
+function getTags() {
+    const tagSet = new Set();
+    currentActivities.forEach(a => {
+        if (a.tags && Array.isArray(a.tags)) {
+            a.tags.forEach(tag => tagSet.add(tag));
+        } else if (a.category) {
+            tagSet.add(a.category);
+        }
+    });
+    return [...tagSet].sort();
+}
+
+// Get tags for an activity (handles both new tags format and old category format)
+function getActivityTags(activity) {
+    if (activity.tags && Array.isArray(activity.tags)) {
+        return activity.tags;
+    } else if (activity.category) {
+        return [activity.category];
+    }
+    return [];
 }
 
 // ========================================
@@ -128,7 +146,7 @@ async function init() {
     populateSlotReel();
     populateActivityGrid();
     populateFilters();
-    populateCategorySelect();
+    populateTagSelect();
     setupEventListeners();
     setupAdminListeners();
 }
@@ -172,12 +190,15 @@ function populateSlotReel() {
 function populateActivityGrid() {
     activityGrid.innerHTML = '';
     filteredActivities.forEach(activity => {
+        const tags = getActivityTags(activity);
+        const tagsHtml = tags.map(tag => `<span class="tag-badge">${tag}</span>`).join('');
+        
         const card = document.createElement('a');
         card.href = activity.url;
         card.target = '_blank';
         card.className = 'grid-card';
         card.innerHTML = `
-            <span class="category-badge">${activity.category}</span>
+            <div class="tags-container">${tagsHtml}</div>
             <h3>${activity.name}</h3>
             <p>${activity.description}</p>
         `;
@@ -189,18 +210,18 @@ function populateActivityGrid() {
 // Filters
 // ========================================
 function populateFilters() {
-    const cats = getCategories();
+    const tags = getTags();
     filterDropdown.innerHTML = `
         <label class="filter-option">
             <input type="checkbox" value="all" checked> All Activities
         </label>
     `;
     
-    cats.forEach(category => {
+    tags.forEach(tag => {
         const option = document.createElement('label');
         option.className = 'filter-option';
         option.innerHTML = `
-            <input type="checkbox" value="${category}"> ${category}
+            <input type="checkbox" value="${tag}"> ${tag}
         `;
         filterDropdown.appendChild(option);
     });
@@ -212,26 +233,26 @@ function handleFilterChange(e) {
     
     if (value === 'all') {
         if (isChecked) {
-            selectedCategories = new Set(['all']);
+            selectedTags = new Set(['all']);
             filterDropdown.querySelectorAll('input').forEach(input => {
                 input.checked = input.value === 'all';
             });
         }
     } else {
-        // Uncheck "all" when specific category is selected
+        // Uncheck "all" when specific tag is selected
         const allCheckbox = filterDropdown.querySelector('input[value="all"]');
         allCheckbox.checked = false;
-        selectedCategories.delete('all');
+        selectedTags.delete('all');
         
         if (isChecked) {
-            selectedCategories.add(value);
+            selectedTags.add(value);
         } else {
-            selectedCategories.delete(value);
+            selectedTags.delete(value);
         }
         
-        // If no categories selected, select all
-        if (selectedCategories.size === 0) {
-            selectedCategories.add('all');
+        // If no tags selected, select all
+        if (selectedTags.size === 0) {
+            selectedTags.add('all');
             allCheckbox.checked = true;
         }
     }
@@ -240,10 +261,14 @@ function handleFilterChange(e) {
 }
 
 function updateFilteredActivities() {
-    if (selectedCategories.has('all')) {
+    if (selectedTags.has('all')) {
         filteredActivities = [...currentActivities];
     } else {
-        filteredActivities = currentActivities.filter(a => selectedCategories.has(a.category));
+        // Filter activities that have at least one of the selected tags
+        filteredActivities = currentActivities.filter(a => {
+            const activityTags = getActivityTags(a);
+            return activityTags.some(tag => selectedTags.has(tag));
+        });
     }
     
     populateSlotReel();
@@ -327,7 +352,10 @@ function showSelectedActivity(activity) {
     activityName.textContent = activity.name;
     activityDescription.textContent = activity.description;
     activityLink.href = activity.url;
-    categoryBadge.textContent = activity.category;
+    
+    // Display tags
+    const tags = getActivityTags(activity);
+    categoryBadge.innerHTML = tags.map(tag => `<span class="selected-tag">${tag}</span>`).join('');
     
     activityCard.classList.remove('hidden');
     activityCard.classList.add('revealed');
@@ -447,7 +475,7 @@ function checkPasscode() {
         adminPasscode.classList.add('hidden');
         adminDashboard.classList.remove('hidden');
         populateAdminActivityList();
-        populateCategorySelect();
+        populateTagSelect();
     } else {
         passcodeError.classList.remove('hidden');
         passcodeInput.value = '';
@@ -455,48 +483,59 @@ function checkPasscode() {
     }
 }
 
-function populateCategorySelect() {
-    const cats = getCategories();
-    newActivityCategory.innerHTML = '<option value="">Select Category</option>';
-    cats.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat;
-        option.textContent = cat;
-        newActivityCategory.appendChild(option);
-    });
-    // Add "New Category" option
-    const newOption = document.createElement('option');
-    newOption.value = '__new__';
-    newOption.textContent = '+ Add New Category';
-    newActivityCategory.appendChild(newOption);
+function populateTagSelect() {
+    const allTags = getTags();
+    newActivityCategory.innerHTML = '';
     
-    // Handle new category
-    newActivityCategory.addEventListener('change', (e) => {
-        if (e.target.value === '__new__') {
-            const newCat = prompt('Enter new category name:');
-            if (newCat && newCat.trim()) {
-                const option = document.createElement('option');
-                option.value = newCat.trim();
-                option.textContent = newCat.trim();
-                newActivityCategory.insertBefore(option, newActivityCategory.lastChild);
-                newActivityCategory.value = newCat.trim();
-            } else {
-                newActivityCategory.value = '';
-            }
-        }
+    // Create tag checkboxes container
+    const container = document.createElement('div');
+    container.className = 'tag-checkbox-container';
+    container.id = 'tagCheckboxContainer';
+    
+    allTags.forEach(tag => {
+        const label = document.createElement('label');
+        label.className = 'tag-checkbox';
+        label.innerHTML = `
+            <input type="checkbox" value="${tag}" name="activityTag"> ${tag}
+        `;
+        container.appendChild(label);
     });
+    
+    // Replace the select with checkboxes
+    newActivityCategory.parentNode.replaceChild(container, newActivityCategory);
+    
+    // Add "new tag" button
+    const addTagBtn = document.createElement('button');
+    addTagBtn.type = 'button';
+    addTagBtn.className = 'admin-btn add-tag-btn';
+    addTagBtn.textContent = '+ Add New Tag';
+    addTagBtn.onclick = () => {
+        const newTag = prompt('Enter new tag name:');
+        if (newTag && newTag.trim()) {
+            const label = document.createElement('label');
+            label.className = 'tag-checkbox';
+            label.innerHTML = `
+                <input type="checkbox" value="${newTag.trim()}" name="activityTag" checked> ${newTag.trim()}
+            `;
+            container.appendChild(label);
+        }
+    };
+    container.appendChild(addTagBtn);
 }
 
 function populateAdminActivityList() {
     adminActivityList.innerHTML = '';
     currentActivities.forEach((activity, index) => {
         const isCustom = activity.custom === true;
+        const tags = getActivityTags(activity);
+        const tagsDisplay = tags.slice(0, 3).join(', ') + (tags.length > 3 ? '...' : '');
+        
         const item = document.createElement('div');
         item.className = `admin-activity-item${isCustom ? ' custom' : ''}`;
         item.innerHTML = `
             <div class="activity-info">
                 <div class="activity-name">${activity.name}</div>
-                <div class="activity-category">${activity.category}${isCustom ? ' • Custom' : ''}</div>
+                <div class="activity-category">${tagsDisplay}${isCustom ? ' • Custom' : ''}</div>
             </div>
             <button class="delete-btn" data-index="${index}" title="Delete">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -521,18 +560,21 @@ async function handleAddActivity(e) {
     
     const name = document.getElementById('newActivityName').value.trim();
     const url = document.getElementById('newActivityUrl').value.trim();
-    const category = document.getElementById('newActivityCategory').value;
     const description = document.getElementById('newActivityDescription').value.trim();
     
-    if (!name || !url || !category || !description) {
-        alert('Please fill in all fields');
+    // Get selected tags from checkboxes
+    const tagCheckboxes = document.querySelectorAll('input[name="activityTag"]:checked');
+    const selectedTagsArray = Array.from(tagCheckboxes).map(cb => cb.value);
+    
+    if (!name || !url || selectedTagsArray.length === 0 || !description) {
+        alert('Please fill in all fields and select at least one tag');
         return;
     }
     
     const newActivity = {
         name,
         url,
-        category,
+        tags: selectedTagsArray,
         description,
         custom: true
     };
@@ -621,7 +663,6 @@ function refreshUI() {
     populateSlotReel();
     populateActivityGrid();
     populateFilters();
-    populateCategorySelect();
 }
 
 // ========================================

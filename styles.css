@@ -377,16 +377,42 @@ header {
 }
 
 .category-badge {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 1rem;
+}
+
+.category-badge .selected-tag {
     display: inline-block;
-    padding: 0.3rem 1rem;
+    padding: 0.2rem 0.6rem;
     background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
     color: var(--white);
-    border-radius: 20px;
-    font-size: 0.8rem;
+    border-radius: 15px;
+    font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 1rem;
+    letter-spacing: 0.05em;
+}
+
+/* Tags Container for Grid Cards */
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.8rem;
+}
+
+.tag-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    background: linear-gradient(135deg, var(--purple) 0%, var(--purple-light) 100%);
+    color: var(--white);
+    border-radius: 12px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 .activity-card h2 {
@@ -1001,6 +1027,124 @@ footer {
 .activity-form select:focus {
     outline: none;
     border-color: var(--purple);
+}
+
+/* Tag Selection in Admin */
+.tags-label {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    color: var(--dark);
+    margin-bottom: 0.3rem;
+}
+
+.tag-checkbox-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.8rem;
+    background: var(--white);
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.tag-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    background: #f0f0f0;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all var(--transition-fast);
+    user-select: none;
+}
+
+.tag-checkbox:hover {
+    background: #e0e0e0;
+}
+
+.tag-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.tag-checkbox.selected {
+    background: var(--purple);
+    color: var(--white);
+}
+
+.tag-checkbox .checkmark {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--gray);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.tag-checkbox.selected .checkmark {
+    background: var(--white);
+    border-color: var(--white);
+}
+
+.tag-checkbox.selected .checkmark::after {
+    content: '✓';
+    color: var(--purple);
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+/* Add New Tag Input */
+.add-tag-container {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.add-tag-container input {
+    flex: 1;
+    padding: 0.5rem 0.8rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
+
+.add-tag-btn {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, var(--sky-blue) 0%, var(--sky-blue-dark) 100%);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.add-tag-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(41, 182, 246, 0.4);
+}
+
+/* Activity Tags in Admin List */
+.admin-activity-item .activity-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+}
+
+.admin-activity-item .activity-tag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    background: var(--sky-blue);
+    color: var(--white);
+    border-radius: 10px;
 }
 
 .admin-btn {

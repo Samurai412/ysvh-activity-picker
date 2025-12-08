@@ -61,7 +61,7 @@
                     
                     <div class="filter-container">
                         <button class="filter-toggle" id="filterToggle">
-                            <span>Filter by Category</span>
+                            <span>Filter by Tags</span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M6 9l6 6 6-6"/>
                             </svg>
@@ -122,9 +122,10 @@
                         <form id="addActivityForm" class="activity-form">
                             <input type="text" id="newActivityName" placeholder="Activity Name" required>
                             <input type="url" id="newActivityUrl" placeholder="https://example.com" required>
-                            <select id="newActivityCategory" required>
-                                <option value="">Select Category</option>
-                            </select>
+                            <div class="tags-label">Select Tags:</div>
+                            <div id="newActivityCategory" class="tag-checkbox-container">
+                                <!-- Tags will be populated dynamically -->
+                            </div>
                             <input type="text" id="newActivityDescription" placeholder="Brief description" required>
                             <button type="submit" class="admin-btn add-btn">Add Activity</button>
                         </form>
