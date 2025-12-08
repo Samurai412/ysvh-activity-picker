@@ -290,7 +290,7 @@ function updateFilteredActivities() {
 }
 
 // ========================================
-// Slot Machine Spin - DRAMATIC VERSION
+// Slot Machine Spin - SUSPENSEFUL REEL VERSION
 // ========================================
 async function spin() {
     if (isSpinning || filteredActivities.length === 0) return;
@@ -301,161 +301,270 @@ async function spin() {
     activityCard.classList.add('hidden');
     activityCard.classList.remove('revealed');
     
-    // Random selection (decide winner now, but reveal dramatically)
+    // Random selection (decide winner now)
     const randomIndex = Math.floor(Math.random() * filteredActivities.length);
     const selectedActivity = filteredActivities[randomIndex];
     
-    // Start the dramatic sequence
-    await dramaticSelection(selectedActivity);
+    // Prepare the reel with multiple copies for scrolling effect
+    prepareReelForSpin();
+    
+    // Start the suspenseful spin!
+    await suspensefulSpin(randomIndex, selectedActivity);
 }
 
-async function dramaticSelection(selectedActivity) {
+function prepareReelForSpin() {
+    slotReel.innerHTML = '';
+    slotReel.style.transition = 'none';
+    slotReel.style.transform = 'translateY(0)';
+    
+    // Create multiple copies for the scrolling effect
+    // We want at least 5 full cycles worth of items
+    const copies = 6;
+    for (let c = 0; c < copies; c++) {
+        filteredActivities.forEach((activity, idx) => {
+            const item = document.createElement('div');
+            item.className = 'slot-item';
+            item.textContent = activity.name;
+            item.dataset.index = idx;
+            slotReel.appendChild(item);
+        });
+    }
+}
+
+async function suspensefulSpin(winnerIndex, selectedActivity) {
     const slotMachine = document.querySelector('.slot-machine');
-    const container = document.querySelector('.slot-window');
+    const container = document.querySelector('.container');
+    const itemHeight = 60; // Must match CSS
+    const totalItems = filteredActivities.length;
     
-    // Phase 1: INTENSE FLICKERING (2 seconds)
-    await intenseFastFlicker(1500);
+    // Calculate final position (land on winner after multiple spins)
+    const fullSpins = 4; // Number of complete cycles
+    const targetItemPosition = fullSpins * totalItems + winnerIndex;
+    const finalOffset = targetItemPosition * itemHeight;
     
-    // Phase 2: SLOWDOWN with fake-outs (3 seconds)
-    await slowdownWithFakeouts(selectedActivity, 3000);
+    // Add excitement effects
+    slotMachine.classList.add('spinning-active');
     
-    // Phase 3: DRAMATIC PAUSE
-    await dramaticPause(800);
+    // Phase 1: FAST SPIN (accelerate then maintain)
+    await fastSpinPhase(itemHeight, totalItems, 2000);
     
-    // Phase 4: FINAL REVEAL
-    await epicReveal(selectedActivity);
+    // Phase 2: SLOWDOWN with visible "almost there" moments
+    await slowdownPhase(finalOffset, itemHeight, winnerIndex, totalItems, 4000);
     
-    // Reset states
+    // Phase 3: Final landing with bounce
+    await landingBounce(finalOffset, itemHeight);
+    
+    // Phase 4: WINNER REVEAL!
+    slotMachine.classList.remove('spinning-active');
+    await revealWinner(selectedActivity);
+    
+    // Reset
     isSpinning = false;
     pickButton.disabled = false;
     pickButton.classList.remove('spinning');
 }
 
-async function intenseFastFlicker(duration) {
+async function fastSpinPhase(itemHeight, totalItems, duration) {
     const slotMachine = document.querySelector('.slot-machine');
-    const container = document.querySelector('.container');
-    
-    // Add visual intensity
     slotMachine.classList.add('intense-spin');
-    container.classList.add('screen-shake');
     
     const startTime = Date.now();
-    let flickerSpeed = 30; // Start very fast
+    const maxSpeed = 25; // pixels per frame at peak
+    let position = 0;
     
     return new Promise(resolve => {
-        function flicker() {
+        function animate() {
             const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
             
-            if (elapsed < duration) {
-                // Show random activity
-                const randomAct = filteredActivities[Math.floor(Math.random() * filteredActivities.length)];
-                updateSlotDisplay(randomAct.name, 'flickering');
-                
-                // Gradually slow down flicker
-                flickerSpeed = 30 + (elapsed / duration) * 100;
-                setTimeout(flicker, flickerSpeed);
+            // Speed curve: accelerate to max, then maintain
+            let speed;
+            if (progress < 0.3) {
+                // Accelerate
+                speed = maxSpeed * (progress / 0.3);
+            } else {
+                // Maintain fast speed
+                speed = maxSpeed;
+            }
+            
+            position += speed;
+            slotReel.style.transform = `translateY(-${position}px)`;
+            
+            // Wrap around if needed
+            const maxPosition = itemHeight * totalItems * 2;
+            if (position > maxPosition) {
+                position -= itemHeight * totalItems;
+                slotReel.style.transition = 'none';
+                slotReel.style.transform = `translateY(-${position}px)`;
+            }
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
             } else {
                 slotMachine.classList.remove('intense-spin');
-                container.classList.remove('screen-shake');
                 resolve();
             }
         }
-        flicker();
+        requestAnimationFrame(animate);
     });
 }
 
-async function slowdownWithFakeouts(winner, duration) {
+async function slowdownPhase(finalOffset, itemHeight, winnerIndex, totalItems, duration) {
     const slotMachine = document.querySelector('.slot-machine');
+    const currentTransform = slotReel.style.transform;
+    const currentPos = parseFloat(currentTransform.match(/-?[\d.]+/)?.[0] || 0);
     
-    // Create pool of activities for fake-outs (exclude winner initially)
-    const fakeoutPool = filteredActivities.filter(a => a.name !== winner.name);
-    const fakeoutCount = 4 + Math.floor(Math.random() * 3); // 4-6 fake-outs
+    // Make sure we're heading toward a position that will land on winner
+    // Calculate how far we need to go
+    let targetPos = finalOffset;
+    
+    // If current position is already past target, add more spins
+    while (targetPos < currentPos) {
+        targetPos += totalItems * itemHeight;
+    }
+    
+    // Add a bit more distance for longer slowdown
+    targetPos += totalItems * itemHeight;
+    
+    const distance = targetPos - currentPos;
+    const startTime = Date.now();
+    const startPos = currentPos;
+    
+    // Track "near miss" highlights
+    let lastHighlightedIndex = -1;
     
     return new Promise(resolve => {
-        let i = 0;
-        const baseDelay = 200;
-        
-        function showNext() {
-            if (i < fakeoutCount) {
-                // Pick a random activity (not the winner until the end)
-                const fakeActivity = fakeoutPool[Math.floor(Math.random() * fakeoutPool.length)];
-                
-                updateSlotDisplay(fakeActivity.name, 'slowing');
-                slotMachine.classList.add('near-stop');
-                
-                // Each pause gets longer (building tension)
-                const delay = baseDelay + (i * 150) + (Math.random() * 100);
-                
-                // Pulse effect on near-miss
-                setTimeout(() => {
-                    slotMachine.classList.remove('near-stop');
-                    i++;
-                    showNext();
-                }, delay);
+        function animate() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // DRAMATIC easing: fast at start, VERY slow at end
+            // Using custom curve that really slows down at the end
+            let easeProgress;
+            if (progress < 0.5) {
+                // First half: still moving fairly quick
+                easeProgress = progress * 0.7;
+            } else if (progress < 0.8) {
+                // Getting slower
+                easeProgress = 0.35 + (progress - 0.5) * 0.4;
+            } else if (progress < 0.95) {
+                // Really slow now - the "come on come on" moment
+                easeProgress = 0.47 + (progress - 0.8) * 0.3;
             } else {
-                // Now show winner in slot
-                updateSlotDisplay(winner.name, 'winner-preview');
+                // Final creep
+                easeProgress = 0.515 + (progress - 0.95) * 1.0;
+            }
+            
+            // Apply exponential easing on top for smoothness
+            const easedProgress = 1 - Math.pow(1 - progress, 3);
+            const position = startPos + distance * easedProgress;
+            
+            slotReel.style.transform = `translateY(-${position}px)`;
+            
+            // Calculate which item is currently visible (centered)
+            const centerOffset = 30; // Half the viewport height roughly
+            const currentItemIndex = Math.round((position + centerOffset) / itemHeight) % totalItems;
+            
+            // Highlight "near miss" items (items close to winner)
+            highlightNearMiss(currentItemIndex, winnerIndex, totalItems, progress);
+            
+            // Add tension effects as we slow down
+            if (progress > 0.7) {
+                slotMachine.classList.add('almost-there');
+                
+                // Pulse more intensely as we get closer
+                if (progress > 0.9) {
+                    slotMachine.classList.add('so-close');
+                }
+            }
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                slotMachine.classList.remove('almost-there');
+                slotMachine.classList.remove('so-close');
                 resolve();
             }
         }
-        showNext();
+        requestAnimationFrame(animate);
     });
 }
 
-async function dramaticPause(duration) {
+function highlightNearMiss(currentIndex, winnerIndex, totalItems, progress) {
+    const items = slotReel.querySelectorAll('.slot-item');
+    
+    items.forEach((item, i) => {
+        const itemIndex = parseInt(item.dataset.index);
+        item.classList.remove('near-winner', 'passing', 'current-visible');
+        
+        // Is this item currently visible/centered?
+        const visualIndex = i % totalItems;
+        if (visualIndex === currentIndex) {
+            item.classList.add('current-visible');
+            
+            // Check if it's "close" to the winner
+            const distanceFromWinner = Math.abs(itemIndex - winnerIndex);
+            const wrappedDistance = Math.min(distanceFromWinner, totalItems - distanceFromWinner);
+            
+            if (wrappedDistance <= 2 && wrappedDistance > 0 && progress > 0.7) {
+                item.classList.add('near-winner');
+            }
+        }
+    });
+}
+
+async function landingBounce(finalOffset, itemHeight) {
     const slotMachine = document.querySelector('.slot-machine');
-    slotMachine.classList.add('dramatic-pause');
     
-    // Pulse effect
-    slotMachine.classList.add('pulse-glow');
+    // Slight overshoot then bounce back
+    slotReel.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    slotReel.style.transform = `translateY(-${finalOffset - 5}px)`;
     
-    return new Promise(resolve => {
-        setTimeout(() => {
-            slotMachine.classList.remove('dramatic-pause');
-            slotMachine.classList.remove('pulse-glow');
-            resolve();
-        }, duration);
-    });
+    await sleep(150);
+    
+    slotReel.style.transition = 'transform 0.2s ease-out';
+    slotReel.style.transform = `translateY(-${finalOffset + 3}px)`;
+    
+    await sleep(100);
+    
+    slotReel.style.transform = `translateY(-${finalOffset}px)`;
+    
+    await sleep(100);
 }
 
-async function epicReveal(activity) {
+async function revealWinner(activity) {
     const slotMachine = document.querySelector('.slot-machine');
     const container = document.querySelector('.container');
     
-    // Flash effect
+    // Flash effect!
     container.classList.add('flash-reveal');
     slotMachine.classList.add('winner-glow');
     
-    // Show the winner name with special styling
-    updateSlotDisplay(activity.name, 'winner');
+    // Highlight winner in reel
+    const items = slotReel.querySelectorAll('.slot-item');
+    items.forEach(item => {
+        item.classList.remove('current-visible', 'near-winner');
+    });
     
-    // Confetti explosion (more intense)
+    // Find and highlight the visible winner
+    const winnerItems = slotReel.querySelectorAll(`[data-index="${filteredActivities.indexOf(activity)}"]`);
+    winnerItems.forEach(item => {
+        item.classList.add('winner-highlight');
+    });
+    
+    // Epic confetti!
     createEpicConfetti();
     
-    // Small delay then show card
     await sleep(500);
     
-    // Show selected activity card with animation
+    // Show the activity card
     showSelectedActivity(activity);
     
-    // Clean up effects
+    // Clean up
     setTimeout(() => {
         container.classList.remove('flash-reveal');
         slotMachine.classList.remove('winner-glow');
     }, 1500);
-}
-
-function updateSlotDisplay(text, state) {
-    // Update all slot items to show the current text with state styling
-    const displayItem = slotReel.querySelector('.slot-item.active') || slotReel.querySelector('.slot-item');
-    
-    if (displayItem) {
-        slotReel.querySelectorAll('.slot-item').forEach(item => {
-            item.classList.remove('active', 'flickering', 'slowing', 'winner-preview', 'winner');
-        });
-        displayItem.textContent = text;
-        displayItem.classList.add('active', state);
-    }
 }
 
 function sleep(ms) {
@@ -463,7 +572,7 @@ function sleep(ms) {
 }
 
 function createSpinEffect() {
-    // Legacy - replaced by new dramatic effects
+    // Legacy - replaced by new effects
 }
 
 function createEpicConfetti() {

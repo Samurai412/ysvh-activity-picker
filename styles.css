@@ -816,6 +816,37 @@ header {
     color: var(--dark);
 }
 
+.slot-item.current-visible {
+    color: var(--purple);
+    font-weight: 700;
+    transform: scale(1.05);
+}
+
+.slot-item.near-winner {
+    color: var(--yellow) !important;
+    font-weight: 800 !important;
+    text-shadow: 
+        0 0 10px var(--yellow),
+        0 0 20px var(--yellow) !important;
+    animation: near-winner-pulse 0.3s ease-in-out !important;
+}
+
+@keyframes near-winner-pulse {
+    0%, 100% { transform: scale(1.05); }
+    50% { transform: scale(1.15); }
+}
+
+.slot-item.winner-highlight {
+    color: var(--green) !important;
+    font-weight: 900 !important;
+    font-size: 1.4rem !important;
+    text-shadow: 
+        0 0 15px var(--green),
+        0 0 30px var(--green),
+        0 0 45px rgba(76, 175, 80, 0.5) !important;
+    animation: winner-pulse 0.5s ease-in-out infinite alternate !important;
+}
+
 .slot-item.flickering {
     color: var(--purple);
     text-shadow: 0 0 10px rgba(123, 31, 162, 0.5);
@@ -864,6 +895,53 @@ header {
     0% { transform: scale(1); }
     50% { transform: scale(1.03); box-shadow: 0 0 40px var(--sky-blue); }
     100% { transform: scale(1); }
+}
+
+/* Almost There - when slowing down */
+.almost-there {
+    box-shadow: 
+        0 0 30px var(--yellow),
+        0 0 60px rgba(255, 225, 25, 0.3) !important;
+    animation: almost-pulse 0.5s ease-in-out infinite !important;
+}
+
+@keyframes almost-pulse {
+    0%, 100% {
+        box-shadow: 
+            0 0 30px var(--yellow),
+            0 0 60px rgba(255, 225, 25, 0.3);
+    }
+    50% {
+        box-shadow: 
+            0 0 50px var(--yellow),
+            0 0 80px rgba(255, 225, 25, 0.5);
+    }
+}
+
+/* So Close! - final moments */
+.so-close {
+    animation: so-close-pulse 0.25s ease-in-out infinite !important;
+    box-shadow: 
+        0 0 40px var(--green),
+        0 0 80px var(--yellow) !important;
+}
+
+@keyframes so-close-pulse {
+    0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 0 40px var(--green), 0 0 80px var(--yellow);
+    }
+    50% { 
+        transform: scale(1.02); 
+        box-shadow: 0 0 60px var(--green), 0 0 100px var(--yellow);
+    }
+}
+
+/* Spinning Active - during fast spin */
+.spinning-active {
+    box-shadow: 
+        0 0 20px var(--sky-blue),
+        0 0 40px rgba(41, 182, 246, 0.4) !important;
 }
 
 /* Dramatic Pause */
