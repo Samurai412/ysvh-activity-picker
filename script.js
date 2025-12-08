@@ -364,9 +364,6 @@ async function continuousSpinAnimation(finalOffset, itemHeight, totalItems, winn
     const totalDuration = 6000; // 6 seconds total
     const startTime = Date.now();
     
-    // Start position
-    let currentPos = 0;
-    
     return new Promise(resolve => {
         function animate() {
             const elapsed = Date.now() - startTime;
@@ -379,29 +376,28 @@ async function continuousSpinAnimation(finalOffset, itemHeight, totalItems, winn
             // - 95-100%: Final creep to target
             
             let easedProgress;
-            if (progress < 0.3) {
-                // Fast phase - cubic ease in
-                easedProgress = Math.pow(progress / 0.3, 0.7) * 0.4;
-            } else if (progress < 0.7) {
-                // Gradual slowdown
-                easedProgress = 0.4 + (progress - 0.3) * 0.75;
-            } else if (progress < 0.95) {
-                // Really slow - building tension
-                easedProgress = 0.7 + (progress - 0.7) * 0.8;
+            if (progress < 0.25) {
+                // Fast phase - quick acceleration
+                easedProgress = Math.pow(progress / 0.25, 0.5) * 0.35;
+            } else if (progress < 0.6) {
+                // Medium phase
+                easedProgress = 0.35 + (progress - 0.25) * 1.0;
+            } else if (progress < 0.85) {
+                // Slow phase - building tension
+                easedProgress = 0.7 + (progress - 0.6) * 0.8;
             } else {
                 // Final creep
-                easedProgress = 0.9 + (progress - 0.95) * 2;
+                easedProgress = 0.9 + (progress - 0.85) * 0.66;
             }
             
-            currentPos = finalOffset * easedProgress;
+            const currentPos = finalOffset * easedProgress;
             slotReel.style.transform = `translateY(-${currentPos}px)`;
             
             // Calculate which item is currently centered
-            const centerOffset = 30;
-            const currentItemIndex = Math.round((currentPos + centerOffset) / itemHeight) % totalItems;
+            const currentItemIndex = Math.floor(currentPos / itemHeight) % totalItems;
             
             // Apply visual effects based on phase
-            if (progress < 0.3) {
+            if (progress < 0.25) {
                 // Fast phase
                 slotMachine.classList.add('intense-spin');
                 slotMachine.classList.remove('almost-there', 'so-close');
@@ -413,7 +409,7 @@ async function continuousSpinAnimation(finalOffset, itemHeight, totalItems, winn
                 slotMachine.classList.remove('intense-spin', 'almost-there');
                 slotMachine.classList.add('so-close');
                 
-                // Highlight near-winner items
+                // Highlight near-winner items in final phase
                 highlightNearMiss(currentItemIndex, winnerIndex, totalItems, progress);
             }
             
@@ -421,6 +417,8 @@ async function continuousSpinAnimation(finalOffset, itemHeight, totalItems, winn
                 requestAnimationFrame(animate);
             } else {
                 slotMachine.classList.remove('intense-spin', 'almost-there', 'so-close');
+                // Set final position exactly
+                slotReel.style.transform = `translateY(-${finalOffset}px)`;
                 resolve();
             }
         }
