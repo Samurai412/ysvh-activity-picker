@@ -701,7 +701,11 @@ function createConfettiPiece(colors, shapes, type) {
 // ========================================
 // Show Selected Activity
 // ========================================
+let currentPickedActivity = null;
+
 function showSelectedActivity(activity) {
+    currentPickedActivity = activity;
+    
     activityName.textContent = activity.name;
     activityDescription.textContent = activity.description;
     activityLink.href = activity.url;
@@ -712,7 +716,7 @@ function showSelectedActivity(activity) {
     
     // Add spin stats display
     const pickCount = spinStats[activity.name] || 0;
-    const statsHtml = `<span class="pick-count">Picked ${pickCount + 1} time${pickCount === 0 ? '' : 's'}</span>`;
+    const statsHtml = `<span class="pick-count">Picked ${pickCount} time${pickCount === 1 ? '' : 's'}</span>`;
     
     // Check if it was recently picked
     const wasRecentlyPicked = recentHistory.includes(activity.name);
@@ -721,13 +725,67 @@ function showSelectedActivity(activity) {
     // Add stats info after tags
     categoryBadge.innerHTML += statsHtml + recentHtml;
     
+    // Add action buttons container
+    let actionsContainer = document.getElementById('activity-actions');
+    if (!actionsContainer) {
+        actionsContainer = document.createElement('div');
+        actionsContainer.id = 'activity-actions';
+        actionsContainer.className = 'activity-actions';
+        activityCard.querySelector('.card-content').appendChild(actionsContainer);
+    }
+    
+    actionsContainer.innerHTML = `
+        <button class="action-btn roll-again-btn" onclick="rollAgain()">
+            <span>🎲</span> Roll Again
+        </button>
+        <button class="action-btn log-it-btn" onclick="logActivity()">
+            <span>✅</span> Log It!
+        </button>
+    `;
+    
     activityCard.classList.remove('hidden');
     activityCard.classList.add('revealed');
     
-    // Track this spin in stats
-    trackSpin(activity);
-    
+    // Don't auto-track - let user click Log It
     // Confetti already triggered in epicReveal
+}
+
+// Roll again without logging
+function rollAgain() {
+    activityCard.classList.add('hidden');
+    activityCard.classList.remove('revealed');
+    currentPickedActivity = null;
+    spin();
+}
+
+// Log the current activity to history and stats
+async function logActivity() {
+    if (!currentPickedActivity) return;
+    
+    await trackSpin(currentPickedActivity);
+    
+    // Visual feedback
+    const logBtn = document.querySelector('.log-it-btn');
+    if (logBtn) {
+        logBtn.innerHTML = '<span>✅</span> Logged!';
+        logBtn.disabled = true;
+        logBtn.classList.add('logged');
+    }
+    
+    // Update the pick count display
+    const pickCount = spinStats[currentPickedActivity.name] || 0;
+    const pickCountEl = activityCard.querySelector('.pick-count');
+    if (pickCountEl) {
+        pickCountEl.textContent = `Picked ${pickCount} time${pickCount === 1 ? '' : 's'}`;
+    }
+    
+    // Mini confetti for logging
+    confetti({
+        particleCount: 30,
+        spread: 50,
+        origin: { y: 0.7 },
+        colors: ['#4caf50', '#ffe119']
+    });
 }
 
 // ========================================

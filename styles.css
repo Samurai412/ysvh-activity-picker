@@ -463,6 +463,71 @@ header {
 }
 
 /* ========================================
+   Activity Action Buttons (Roll Again / Log It)
+   ======================================== */
+.activity-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.5rem;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn span {
+    font-size: 1.2rem;
+}
+
+.roll-again-btn {
+    background: linear-gradient(135deg, var(--purple), #9c27b0);
+    color: white;
+}
+
+.roll-again-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(123, 31, 162, 0.5);
+}
+
+.log-it-btn {
+    background: linear-gradient(135deg, var(--green), #66bb6a);
+    color: white;
+}
+
+.log-it-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+}
+
+.log-it-btn.logged {
+    background: linear-gradient(135deg, #2e7d32, #388e3c);
+    cursor: default;
+    opacity: 0.9;
+}
+
+.log-it-btn:disabled {
+    cursor: default;
+}
+
+.log-it-btn:disabled:hover {
+    transform: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* ========================================
    Controls
    ======================================== */
 .controls {
