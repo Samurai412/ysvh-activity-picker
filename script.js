@@ -553,7 +553,7 @@ function populateTagSelect() {
             });
             container.insertBefore(label, addTagBtn);
         }
-    };
+    });
     container.appendChild(addTagBtn);
 }
 
