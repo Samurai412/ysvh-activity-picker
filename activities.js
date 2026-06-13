@@ -310,6 +310,96 @@ const activities = [
         url: "https://www.dicechess.com/",
         tags: ["Strategy", "Chess", "Chaos"],
         description: "Chess with dice - embrace the chaos!"
+    },
+    {
+        name: "Squabble",
+        url: "https://squabble.me/",
+        tags: ["Word Games", "Puzzle", "Multiplayer", "Battle Royale"],
+        description: "Wordle, but battle royale style with damage!"
+    },
+    {
+        name: "Redactle",
+        url: "https://redactle.net/",
+        tags: ["Word Games", "Puzzle", "Daily"],
+        description: "Find the hidden Wikipedia article by guessing words to unredact it."
+    },
+    {
+        name: "Storium",
+        url: "https://storium.com/",
+        tags: ["Creative", "Roleplaying", "Social"],
+        description: "The online storytelling game where you write stories together."
+    },
+    {
+        name: "Roshambo",
+        url: "https://roshambo.me/",
+        tags: ["Casual", "Quick", "Multiplayer"],
+        description: "Simple multiplayer rock-paper-scissors game in your browser."
+    },
+    {
+        name: "Plink",
+        url: "https://dinahmoelabs.com/plink/",
+        tags: ["Music", "Creative", "Multiplayer"],
+        description: "A multiplayer musical sandbox - join in and jam together."
+    },
+    {
+        name: "Abstract Play",
+        url: "https://play.abstractplay.com/",
+        tags: ["Board Games", "Strategy", "Multiplayer"],
+        description: "Platform for playing online multiplayer abstract board games."
+    },
+    {
+        name: "The Boring App",
+        url: "https://samurai412.github.io/theboringapp/",
+        tags: ["Challenge", "Casual", "Quick"],
+        description: "Test your mental endurance by holding the circle for as long as you can."
+    },
+    {
+        name: "Iso-City",
+        url: "https://iso-city.com/",
+        tags: ["Co-op", "Creative", "Casual"],
+        description: "Online collaborative multiplayer city builder."
+    },
+    {
+        name: "Puzzmo",
+        url: "https://www.puzzmo.com/today/",
+        tags: ["Puzzle", "Daily", "Collection"],
+        description: "A platform filled with daily puzzle games."
+    },
+    {
+        name: "PARISUCAT",
+        url: "https://parisucat.netlify.app/",
+        tags: ["Puzzle", "Challenge", "Quick"],
+        description: "Minimalist, high-speed grid navigation puzzle game to test your reflexes."
+    },
+    {
+        name: "Enclose Horse",
+        url: "https://enclose.horse/",
+        tags: ["Puzzle", "Daily", "Strategy"],
+        description: "A daily puzzle game where you trap a horse within a fenced area on a grid."
+    },
+    {
+        name: "Tactic or Not",
+        url: "https://tacticornot.com/",
+        tags: ["Strategy", "Chess", "Puzzle"],
+        description: "Chess training game where you decide if a position has a winning tactic or is just a quiet move."
+    },
+    {
+        name: "CoolerChess",
+        url: "https://coolerchess.netlify.app",
+        tags: ["Strategy", "Chess", "Multiplayer"],
+        description: "Play Nonovian Chess and Asymmetric Chess variants."
+    },
+    {
+        name: "Wordsmyth",
+        url: "https://playwordsmyth.com",
+        tags: ["Word Games", "Daily", "Puzzle"],
+        description: "A relaxing daily word game where you find words from a 9-letter grid."
+    },
+    {
+        name: "Play Lethal",
+        url: "https://playlethal.fun/",
+        tags: ["Action", "Competitive", "Multiplayer"],
+        description: "A fast-paced multiplayer web-based fighting game."
     }
 ];
 

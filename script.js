@@ -1,18 +1,11 @@
 // ========================================
 // DOM Elements
 // ========================================
-const slotReel = document.getElementById('slotReel');
 const pickButton = document.getElementById('pickButton');
-const activityCard = document.getElementById('activityCard');
-const activityName = document.getElementById('activityName');
-const activityDescription = document.getElementById('activityDescription');
-const activityLink = document.getElementById('activityLink');
-const categoryBadge = document.getElementById('categoryBadge');
+const selectedActivitiesContainer = document.getElementById('selectedActivitiesContainer');
 const activityGrid = document.getElementById('activityGrid');
 const filterToggle = document.getElementById('filterToggle');
 const filterDropdown = document.getElementById('filterDropdown');
-const confettiContainer = document.getElementById('confetti');
-const particleContainer = document.getElementById('particles');
 
 // Admin Elements
 const adminToggle = document.getElementById('adminToggle');
@@ -51,6 +44,8 @@ let favorites = new Set(); // Activity names that are favorited
 let recentHistory = []; // Last 10 picked activities
 let spinStats = {}; // { activityName: count }
 let showFavoritesOnly = false;
+let currentPickedActivities = [null, null];
+let rollCount = 2; // Default is rolling 2 activities
 
 // ========================================
 // Firebase Functions
@@ -62,11 +57,23 @@ async function loadActivitiesFromFirebase() {
         const data = await response.json();
         
         if (data && Array.isArray(data)) {
-            currentActivities = data;
+            // Merge Firebase data with default activities (avoiding duplicates by URL)
+            const firebaseUrls = new Set(data.map(a => a.url));
+            const merged = [...data];
+            activities.forEach(defaultAct => {
+                if (!firebaseUrls.has(defaultAct.url)) {
+                    merged.push(defaultAct);
+                }
+            });
+            currentActivities = merged;
         } else {
             // First time - initialize with default activities
             currentActivities = [...activities];
-            await saveActivitiesToFirebase();
+            try {
+                await saveActivitiesToFirebase();
+            } catch (err) {
+                console.warn('Firebase write restricted, running in local mode.');
+            }
         }
         
         // Load extras (favorites, history, stats)
@@ -166,7 +173,6 @@ async function saveActivitiesToFirebase() {
         return true;
     } catch (error) {
         console.error('Error saving to Firebase:', error);
-        alert('Failed to save changes. Please try again.');
         return false;
     }
 }
@@ -186,7 +192,7 @@ function hideLoadingState() {
         pickButton.disabled = false;
         pickButton.querySelector('.button-text').innerHTML = `
             <span class="icon">🎲</span>
-            Pick Random Activity
+            Roll 2 Activities
         `;
     }
 }
@@ -203,7 +209,7 @@ function getTags() {
     return [...tagSet].sort();
 }
 
-// Get tags for an activity (handles both new tags format and old category format)
+// Get tags for an activity
 function getActivityTags(activity) {
     if (activity.tags && Array.isArray(activity.tags)) {
         return activity.tags;
@@ -217,47 +223,12 @@ function getActivityTags(activity) {
 // Initialization
 // ========================================
 async function init() {
-    createParticles();
     await loadActivitiesFromFirebase();
-    populateSlotReel();
     populateActivityGrid();
     populateFilters();
     populateTagSelect();
     setupEventListeners();
     setupAdminListeners();
-}
-
-// ========================================
-// Background Particles
-// ========================================
-function createParticles() {
-    for (let i = 0; i < 30; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = `${Math.random() * 100}%`;
-        particle.style.animationDelay = `${Math.random() * 8}s`;
-        particle.style.width = `${5 + Math.random() * 10}px`;
-        particle.style.height = particle.style.width;
-        particle.style.opacity = `${0.2 + Math.random() * 0.4}`;
-        particleContainer.appendChild(particle);
-    }
-}
-
-// ========================================
-// Slot Reel
-// ========================================
-function populateSlotReel() {
-    slotReel.innerHTML = '';
-    // Create multiple copies for smooth scrolling effect
-    const copies = 3;
-    for (let i = 0; i < copies; i++) {
-        filteredActivities.forEach(activity => {
-            const item = document.createElement('div');
-            item.className = 'slot-item';
-            item.textContent = activity.name;
-            slotReel.appendChild(item);
-        });
-    }
 }
 
 // ========================================
@@ -394,398 +365,180 @@ function updateFilteredActivities() {
     }
     
     filteredActivities = result;
-    
-    populateSlotReel();
     populateActivityGrid();
 }
 
 // ========================================
-// Slot Machine Spin - SUSPENSEFUL REEL VERSION
+// Tumbling Dice & Roll Logic
 // ========================================
+function spawnDiceExplosion() {
+    const diceContainer = document.getElementById('diceContainer');
+    if (!diceContainer) return;
+    
+    diceContainer.innerHTML = '';
+    
+    const diceFaces = ['🎲', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+    const totalDice = 100;
+    
+    for (let i = 0; i < totalDice; i++) {
+        const die = document.createElement('div');
+        die.className = 'die-particle';
+        die.textContent = diceFaces[Math.floor(Math.random() * diceFaces.length)];
+        
+        // Random circular physics trajectories using CSS variables
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = 80 + Math.random() * 220; // Launch force
+        
+        const startX = '0px';
+        const startY = '0px';
+        
+        // Explode outward
+        const midX = `${Math.cos(angle) * velocity}px`;
+        const midY = `${Math.sin(angle) * velocity - 120}px`; // Launch upwards slightly
+        
+        // Bounce down to floor
+        const bounceX = `${Math.cos(angle) * (velocity + 30)}px`;
+        const bounceY = `${120 + Math.random() * 60}px`; // Virtual floor
+        
+        // Roll away
+        const endX = `${Math.cos(angle) * (velocity + 160) + (Math.random() - 0.5) * 80}px`;
+        const endY = `${160 + Math.random() * 100}px`;
+        
+        // Rotations
+        const rot1 = `${Math.random() * 360}deg`;
+        const rot2 = `${Math.random() * 720}deg`;
+        const rot3 = `${Math.random() * 1440}deg`;
+        
+        // Delay spawning slightly to create a stream effect
+        const delay = Math.random() * 300; // up to 300ms delay
+        
+        die.style.setProperty('--start-x', startX);
+        die.style.setProperty('--start-y', startY);
+        die.style.setProperty('--mid-x', midX);
+        die.style.setProperty('--mid-y', midY);
+        die.style.setProperty('--bounce-x', bounceX);
+        die.style.setProperty('--bounce-y', bounceY);
+        die.style.setProperty('--end-x', endX);
+        die.style.setProperty('--end-y', endY);
+        die.style.setProperty('--rot-1', rot1);
+        die.style.setProperty('--rot-2', rot2);
+        die.style.setProperty('--rot-3', rot3);
+        
+        die.style.animationDelay = `${delay}ms`;
+        
+        diceContainer.appendChild(die);
+    }
+}
+
 async function spin() {
     if (isSpinning || filteredActivities.length === 0) return;
     
     isSpinning = true;
     pickButton.disabled = true;
-    pickButton.classList.add('spinning');
-    activityCard.classList.add('hidden');
-    activityCard.classList.remove('revealed');
+    selectedActivitiesContainer.classList.add('hidden');
     
-    // Random selection (decide winner now)
-    const randomIndex = Math.floor(Math.random() * filteredActivities.length);
-    const selectedActivity = filteredActivities[randomIndex];
+    // Launch dice roll visual effect!
+    spawnDiceExplosion();
     
-    // Prepare the reel with multiple copies for scrolling effect
-    prepareReelForSpin();
-    
-    // Start the suspenseful spin!
-    await suspensefulSpin(randomIndex, selectedActivity);
-}
-
-function prepareReelForSpin() {
-    slotReel.innerHTML = '';
-    slotReel.style.transition = 'none';
-    slotReel.style.transform = 'translateY(0)';
-    
-    // Create MANY copies for the scrolling effect (enough for long scroll)
-    const copies = 15; // Lots of copies so we never run out
-    for (let c = 0; c < copies; c++) {
-        filteredActivities.forEach((activity, idx) => {
-            const item = document.createElement('div');
-            item.className = 'slot-item';
-            item.textContent = activity.name;
-            item.dataset.index = idx;
-            item.dataset.copy = c;
-            slotReel.appendChild(item);
-        });
-    }
-}
-
-async function suspensefulSpin(winnerIndex, selectedActivity) {
-    const slotMachine = document.querySelector('.slot-machine');
-    const itemHeight = 60; // Must match CSS
-    const totalItems = filteredActivities.length;
-    
-    // Calculate final position (land on winner in the middle copies)
-    const targetCopy = 8; // Land in copy 8 (middle-ish)
-    const finalOffset = (targetCopy * totalItems + winnerIndex) * itemHeight;
-    
-    // Add excitement effects
-    slotMachine.classList.add('spinning-active');
-    
-    // Single continuous animation with multiple phases
-    await continuousSpinAnimation(finalOffset, itemHeight, totalItems, winnerIndex);
-    
-    // Phase: Final landing with bounce
-    await landingBounce(finalOffset, itemHeight);
-    
-    // Phase: WINNER REVEAL!
-    slotMachine.classList.remove('spinning-active');
-    await revealWinner(selectedActivity);
-    
-    // Reset
-    isSpinning = false;
-    pickButton.disabled = false;
-    pickButton.classList.remove('spinning');
-}
-
-async function continuousSpinAnimation(finalOffset, itemHeight, totalItems, winnerIndex) {
-    const slotMachine = document.querySelector('.slot-machine');
-    const totalDuration = 6000; // 6 seconds total
-    const startTime = Date.now();
-    
-    return new Promise(resolve => {
-        function animate() {
-            const elapsed = Date.now() - startTime;
-            const progress = Math.min(elapsed / totalDuration, 1);
-            
-            // Custom easing curve for suspense:
-            // - 0-30%: Fast acceleration and maintain speed
-            // - 30-70%: Gradual slowdown (the suspenseful part)
-            // - 70-95%: Really slow (almost stopping)
-            // - 95-100%: Final creep to target
-            
-            let easedProgress;
-            if (progress < 0.25) {
-                // Fast phase - quick acceleration
-                easedProgress = Math.pow(progress / 0.25, 0.5) * 0.35;
-            } else if (progress < 0.6) {
-                // Medium phase
-                easedProgress = 0.35 + (progress - 0.25) * 1.0;
-            } else if (progress < 0.85) {
-                // Slow phase - building tension
-                easedProgress = 0.7 + (progress - 0.6) * 0.8;
-            } else {
-                // Final creep
-                easedProgress = 0.9 + (progress - 0.85) * 0.66;
-            }
-            
-            const currentPos = finalOffset * easedProgress;
-            slotReel.style.transform = `translateY(-${currentPos}px)`;
-            
-            // Calculate which item is currently centered
-            const currentItemIndex = Math.floor(currentPos / itemHeight) % totalItems;
-            
-            // Apply visual effects based on phase
-            if (progress < 0.25) {
-                // Fast phase
-                slotMachine.classList.add('intense-spin');
-                slotMachine.classList.remove('almost-there', 'so-close');
-            } else if (progress < 0.7) {
-                slotMachine.classList.remove('intense-spin');
-                slotMachine.classList.add('almost-there');
-                slotMachine.classList.remove('so-close');
-            } else {
-                slotMachine.classList.remove('intense-spin', 'almost-there');
-                slotMachine.classList.add('so-close');
-                
-                // Highlight near-winner items in final phase
-                highlightNearMiss(currentItemIndex, winnerIndex, totalItems, progress);
-            }
-            
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            } else {
-                slotMachine.classList.remove('intense-spin', 'almost-there', 'so-close');
-                // Set final position exactly
-                slotReel.style.transform = `translateY(-${finalOffset}px)`;
-                resolve();
-            }
-        }
-        requestAnimationFrame(animate);
-    });
-}
-
-function highlightNearMiss(currentIndex, winnerIndex, totalItems, progress) {
-    const items = slotReel.querySelectorAll('.slot-item');
-    
-    items.forEach((item, i) => {
-        const itemIndex = parseInt(item.dataset.index);
-        item.classList.remove('near-winner', 'passing', 'current-visible');
+    // Anticipation delay (duration of dice tumbling & settling is 1.2s + delay offset = ~1.5s total)
+    setTimeout(() => {
+        // Clear dice elements
+        const diceContainer = document.getElementById('diceContainer');
+        if (diceContainer) diceContainer.innerHTML = '';
         
-        // Is this item currently visible/centered?
-        const visualIndex = i % totalItems;
-        if (visualIndex === currentIndex) {
-            item.classList.add('current-visible');
-            
-            // Check if it's "close" to the winner
-            const distanceFromWinner = Math.abs(itemIndex - winnerIndex);
-            const wrappedDistance = Math.min(distanceFromWinner, totalItems - distanceFromWinner);
-            
-            if (wrappedDistance <= 2 && wrappedDistance > 0 && progress > 0.7) {
-                item.classList.add('near-winner');
+        // Perform the roll calculations
+        const rollCountToPick = Math.min(rollCount, filteredActivities.length);
+        
+        if (rollCountToPick === 1) {
+            const finalIdx1 = Math.floor(Math.random() * filteredActivities.length);
+            const act1 = filteredActivities[finalIdx1];
+            currentPickedActivities = [act1, null];
+            showSelectedActivity(act1, null);
+        } else {
+            const finalIdx1 = Math.floor(Math.random() * filteredActivities.length);
+            let finalIdx2 = Math.floor(Math.random() * filteredActivities.length);
+            if (filteredActivities.length > 1 && finalIdx1 === finalIdx2) {
+                finalIdx2 = (finalIdx2 + 1) % filteredActivities.length;
             }
+            const act1 = filteredActivities[finalIdx1];
+            const act2 = filteredActivities.length > 1 ? filteredActivities[finalIdx2] : null;
+            currentPickedActivities = [act1, act2];
+            showSelectedActivity(act1, act2);
         }
-    });
+        
+        isSpinning = false;
+        pickButton.disabled = false;
+    }, 1500); // 1.5 second wait for full anticipation
 }
 
-async function landingBounce(finalOffset, itemHeight) {
-    const slotMachine = document.querySelector('.slot-machine');
+function showSelectedActivityDetails(slotNum, activity) {
+    const cardEl = document.getElementById(`activityCard${slotNum}`);
+    if (!activity) {
+        if (cardEl) cardEl.style.display = 'none';
+        return;
+    }
+    if (cardEl) cardEl.style.display = 'flex';
     
-    // Slight overshoot then bounce back
-    slotReel.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-    slotReel.style.transform = `translateY(-${finalOffset - 5}px)`;
+    const nameEl = document.getElementById(`activityName${slotNum}`);
+    const descEl = document.getElementById(`activityDescription${slotNum}`);
+    const linkEl = document.getElementById(`activityLink${slotNum}`);
+    const badgeEl = document.getElementById(`categoryBadge${slotNum}`);
     
-    await sleep(150);
+    if (nameEl) nameEl.textContent = activity.name;
+    if (descEl) descEl.textContent = activity.description;
+    if (linkEl) linkEl.href = activity.url;
     
-    slotReel.style.transition = 'transform 0.2s ease-out';
-    slotReel.style.transform = `translateY(-${finalOffset + 3}px)`;
-    
-    await sleep(100);
-    
-    slotReel.style.transform = `translateY(-${finalOffset}px)`;
-    
-    await sleep(100);
-}
-
-async function revealWinner(activity) {
-    const slotMachine = document.querySelector('.slot-machine');
-    const container = document.querySelector('.container');
-    
-    // Flash effect!
-    container.classList.add('flash-reveal');
-    slotMachine.classList.add('winner-glow');
-    
-    // Highlight winner in reel
-    const items = slotReel.querySelectorAll('.slot-item');
-    items.forEach(item => {
-        item.classList.remove('current-visible', 'near-winner');
-    });
-    
-    // Find and highlight the visible winner
-    const winnerItems = slotReel.querySelectorAll(`[data-index="${filteredActivities.indexOf(activity)}"]`);
-    winnerItems.forEach(item => {
-        item.classList.add('winner-highlight');
-    });
-    
-    // Epic confetti!
-    createEpicConfetti();
-    
-    await sleep(500);
-    
-    // Show the activity card
-    showSelectedActivity(activity);
-    
-    // Clean up
-    setTimeout(() => {
-        container.classList.remove('flash-reveal');
-        slotMachine.classList.remove('winner-glow');
-    }, 1500);
-}
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function createSpinEffect() {
-    // Legacy - replaced by new effects
-}
-
-function createEpicConfetti() {
-    const colors = ['#ffe119', '#29b6f6', '#4caf50', '#7b1fa2', '#ffffff', '#9c4dcc', '#ff6b6b', '#ffd93d'];
-    const shapes = ['square', 'circle', 'triangle'];
-    
-    // First burst - center explosion
-    for (let i = 0; i < 80; i++) {
-        setTimeout(() => {
-            createConfettiPiece(colors, shapes, 'burst');
-        }, i * 10);
+    if (badgeEl) {
+        const tags = getActivityTags(activity);
+        badgeEl.innerHTML = tags.map(tag => `<span class="selected-tag">${tag}</span>`).join('');
+        
+        const pickCount = spinStats[activity.name] || 0;
+        const statsHtml = `<span class="pick-count">Picked ${pickCount}x</span>`;
+        
+        const wasRecentlyPicked = recentHistory.includes(activity.name);
+        const recentHtml = wasRecentlyPicked ? '<span class="recent-alert">🔄 Recent</span>' : '';
+        
+        badgeEl.innerHTML += statsHtml + recentHtml;
     }
     
-    // Second burst - sides
-    setTimeout(() => {
-        for (let i = 0; i < 60; i++) {
-            setTimeout(() => {
-                createConfettiPiece(colors, shapes, 'sides');
-            }, i * 15);
-        }
-    }, 300);
-    
-    // Continuous rain
-    setTimeout(() => {
-        for (let i = 0; i < 100; i++) {
-            setTimeout(() => {
-                createConfettiPiece(colors, shapes, 'rain');
-            }, i * 30);
-        }
-    }, 600);
-}
-
-function createConfettiPiece(colors, shapes, type) {
-    const confetti = document.createElement('div');
-    confetti.className = 'confetti';
-    
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    const shape = shapes[Math.floor(Math.random() * shapes.length)];
-    const size = 6 + Math.random() * 12;
-    
-    let startX, startY, animClass;
-    
-    switch(type) {
-        case 'burst':
-            startX = 45 + Math.random() * 10;
-            startY = 30;
-            animClass = 'confetti-burst';
-            break;
-        case 'sides':
-            startX = Math.random() < 0.5 ? Math.random() * 20 : 80 + Math.random() * 20;
-            startY = 20 + Math.random() * 20;
-            animClass = 'confetti-sides';
-            break;
-        default:
-            startX = Math.random() * 100;
-            startY = -5;
-            animClass = 'confetti-rain';
+    const actionsEl = document.getElementById(`activityActions${slotNum}`);
+    if (actionsEl) {
+        actionsEl.innerHTML = `
+            <button class="action-btn log-it-btn" onclick="logSingleActivity(${slotNum})">
+                <span>✅</span> Log
+            </button>
+        `;
     }
-    
-    let borderRadius = shape === 'circle' ? '50%' : shape === 'triangle' ? '0' : '2px';
-    let clipPath = shape === 'triangle' ? 'polygon(50% 0%, 0% 100%, 100% 100%)' : 'none';
-    
-    confetti.style.cssText = `
-        left: ${startX}%;
-        top: ${startY}%;
-        width: ${size}px;
-        height: ${size}px;
-        background: ${color};
-        border-radius: ${borderRadius};
-        clip-path: ${clipPath};
-        animation-duration: ${2 + Math.random() * 2}s;
-    `;
-    confetti.classList.add(animClass);
-    
-    confettiContainer.appendChild(confetti);
-    
-    setTimeout(() => confetti.remove(), 4500);
 }
 
-// ========================================
-// Show Selected Activity
-// ========================================
-let currentPickedActivity = null;
-
-function showSelectedActivity(activity) {
-    currentPickedActivity = activity;
-    
-    activityName.textContent = activity.name;
-    activityDescription.textContent = activity.description;
-    activityLink.href = activity.url;
-    
-    // Display tags
-    const tags = getActivityTags(activity);
-    categoryBadge.innerHTML = tags.map(tag => `<span class="selected-tag">${tag}</span>`).join('');
-    
-    // Add spin stats display
-    const pickCount = spinStats[activity.name] || 0;
-    const statsHtml = `<span class="pick-count">Picked ${pickCount} time${pickCount === 1 ? '' : 's'}</span>`;
-    
-    // Check if it was recently picked
-    const wasRecentlyPicked = recentHistory.includes(activity.name);
-    const recentHtml = wasRecentlyPicked ? '<span class="recent-alert">🔄 We just did this!</span>' : '';
-    
-    // Add stats info after tags
-    categoryBadge.innerHTML += statsHtml + recentHtml;
-    
-    // Add action buttons container
-    let actionsContainer = document.getElementById('activity-actions');
-    if (!actionsContainer) {
-        actionsContainer = document.createElement('div');
-        actionsContainer.id = 'activity-actions';
-        actionsContainer.className = 'activity-actions';
-        activityCard.querySelector('.card-content').appendChild(actionsContainer);
-    }
-    
-    actionsContainer.innerHTML = `
-        <button class="action-btn roll-again-btn" onclick="rollAgain()">
-            <span>🎲</span> Roll Again
-        </button>
-        <button class="action-btn log-it-btn" onclick="logActivity()">
-            <span>✅</span> Log It!
-        </button>
-    `;
-    
-    activityCard.classList.remove('hidden');
-    activityCard.classList.add('revealed');
-    
-    // Don't auto-track - let user click Log It
-    // Confetti already triggered in epicReveal
+function showSelectedActivity(act1, act2) {
+    showSelectedActivityDetails(1, act1);
+    showSelectedActivityDetails(2, act2);
+    selectedActivitiesContainer.classList.remove('hidden');
 }
 
-// Roll again without logging
-function rollAgain() {
-    activityCard.classList.add('hidden');
-    activityCard.classList.remove('revealed');
-    currentPickedActivity = null;
-    spin();
-}
-
-// Log the current activity to history and stats
-async function logActivity() {
-    if (!currentPickedActivity) return;
+async function logSingleActivity(slotNum) {
+    const activity = currentPickedActivities[slotNum - 1];
+    if (!activity) return;
     
-    await trackSpin(currentPickedActivity);
+    await trackSpin(activity);
     
-    // Visual feedback
-    const logBtn = document.querySelector('.log-it-btn');
+    // Visual feedback for button
+    const actionsEl = document.getElementById(`activityActions${slotNum}`);
+    const logBtn = actionsEl ? actionsEl.querySelector('.log-it-btn') : null;
     if (logBtn) {
-        logBtn.innerHTML = '<span>✅</span> Logged!';
+        logBtn.innerHTML = '<span>Logged!</span>';
         logBtn.disabled = true;
         logBtn.classList.add('logged');
     }
     
-    // Update the pick count display
-    const pickCount = spinStats[currentPickedActivity.name] || 0;
-    const pickCountEl = activityCard.querySelector('.pick-count');
+    // Update count display
+    const badgeEl = document.getElementById(`categoryBadge${slotNum}`);
+    const pickCount = spinStats[activity.name] || 0;
+    const pickCountEl = badgeEl ? badgeEl.querySelector('.pick-count') : null;
     if (pickCountEl) {
-        pickCountEl.textContent = `Picked ${pickCount} time${pickCount === 1 ? '' : 's'}`;
+        pickCountEl.textContent = `Picked ${pickCount}x`;
     }
-    
-    // Mini confetti for logging
-    confetti({
-        particleCount: 30,
-        spread: 50,
-        origin: { y: 0.7 },
-        colors: ['#4caf50', '#ffe119']
-    });
 }
 
 // ========================================
@@ -801,6 +554,7 @@ function toggleFavorite(activityName) {
     updateFilteredActivities();
 }
 
+// Check if favorite
 function isFavorite(activityName) {
     return favorites.has(activityName);
 }
@@ -819,24 +573,19 @@ function toggleFavoritesFilter() {
 // Spin Stats & History
 // ========================================
 async function trackSpin(activity) {
-    // Update spin stats
     if (!spinStats[activity.name]) {
         spinStats[activity.name] = 0;
     }
     spinStats[activity.name]++;
     
-    // Update recent history (keep last 10)
-    recentHistory = recentHistory.filter(name => name !== activity.name); // Remove if already exists
+    recentHistory = recentHistory.filter(name => name !== activity.name);
     recentHistory.unshift(activity.name);
     if (recentHistory.length > 10) {
         recentHistory = recentHistory.slice(0, 10);
     }
     
-    // Save to Firebase
     await saveStatsToFirebase();
     await saveHistoryToFirebase();
-    
-    // Update history panel if visible
     updateHistoryPanel();
 }
 
@@ -864,10 +613,9 @@ function updateHistoryPanel() {
 }
 
 function getMostPickedActivities(limit = 5) {
-    const sorted = Object.entries(spinStats)
+    return Object.entries(spinStats)
         .sort((a, b) => b[1] - a[1])
         .slice(0, limit);
-    return sorted;
 }
 
 function getRarestPick() {
@@ -882,46 +630,27 @@ function getRarestPick() {
 }
 
 // ========================================
-// Confetti Effect
-// ========================================
-function createConfetti() {
-    const colors = ['#ffe119', '#29b6f6', '#4caf50', '#7b1fa2', '#ffffff', '#9c4dcc'];
-    const shapes = ['square', 'circle'];
-    
-    for (let i = 0; i < 100; i++) {
-        setTimeout(() => {
-            const confetti = document.createElement('div');
-            confetti.className = 'confetti';
-            
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            const shape = shapes[Math.floor(Math.random() * shapes.length)];
-            const size = 5 + Math.random() * 10;
-            
-            confetti.style.cssText = `
-                left: ${Math.random() * 100}%;
-                width: ${size}px;
-                height: ${size}px;
-                background: ${color};
-                border-radius: ${shape === 'circle' ? '50%' : '0'};
-                animation-delay: ${Math.random() * 0.5}s;
-                animation-duration: ${2 + Math.random() * 2}s;
-            `;
-            
-            confettiContainer.appendChild(confetti);
-            
-            // Remove after animation
-            setTimeout(() => {
-                confetti.remove();
-            }, 4000);
-        }, i * 20);
-    }
-}
-
-// ========================================
 // Event Listeners
 // ========================================
 function setupEventListeners() {
     pickButton.addEventListener('click', spin);
+    
+    const choiceRoll1 = document.getElementById('choiceRoll1');
+    const choiceRoll2 = document.getElementById('choiceRoll2');
+    if (choiceRoll1 && choiceRoll2) {
+        choiceRoll1.addEventListener('click', () => {
+            if (isSpinning) return;
+            rollCount = 1;
+            choiceRoll1.classList.add('active');
+            choiceRoll2.classList.remove('active');
+        });
+        choiceRoll2.addEventListener('click', () => {
+            if (isSpinning) return;
+            rollCount = 2;
+            choiceRoll2.classList.add('active');
+            choiceRoll1.classList.remove('active');
+        });
+    }
     
     filterToggle.addEventListener('click', (e) => {
         e.preventDefault();
@@ -929,7 +658,6 @@ function setupEventListeners() {
         filterToggle.classList.toggle('active');
     });
     
-    // Favorites toggle
     const favoritesToggle = document.getElementById('favoritesToggle');
     if (favoritesToggle) {
         favoritesToggle.addEventListener('click', () => {
@@ -938,7 +666,6 @@ function setupEventListeners() {
         });
     }
     
-    // Stats panel toggle
     const statsToggle = document.getElementById('statsToggle');
     const statsPanel = document.getElementById('statsPanel');
     const closeStats = document.getElementById('closeStats');
@@ -958,7 +685,6 @@ function setupEventListeners() {
         });
     }
     
-    // Close filter dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!filterToggle.contains(e.target) && !filterDropdown.contains(e.target)) {
             filterDropdown.classList.add('hidden');
@@ -966,9 +692,8 @@ function setupEventListeners() {
         }
     });
     
-    // Keyboard support
     document.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && !isSpinning && !adminModal.classList.contains('hidden') === false) {
+        if (e.code === 'Space' && !isSpinning && adminModal.classList.contains('hidden')) {
             e.preventDefault();
             spin();
         }
@@ -978,18 +703,13 @@ function setupEventListeners() {
 function updateGridTitle() {
     const gridTitle = document.getElementById('gridTitle');
     if (gridTitle) {
-        if (showFavoritesOnly) {
-            gridTitle.textContent = '⭐ Favorite Activities';
-        } else {
-            gridTitle.textContent = 'All Activities';
-        }
+        gridTitle.textContent = showFavoritesOnly ? '⭐ Favorite Activities' : 'All Activities';
     }
 }
 
 function updateStatsPanel() {
     updateHistoryPanel();
     
-    // Update top picks
     const topPicks = document.getElementById('topPicks');
     if (topPicks) {
         const mostPicked = getMostPickedActivities(5);
@@ -1006,7 +726,6 @@ function updateStatsPanel() {
         }
     }
     
-    // Update total spins
     const totalSpins = document.getElementById('totalSpins');
     if (totalSpins) {
         const total = Object.values(spinStats).reduce((sum, count) => sum + count, 0);
@@ -1018,26 +737,20 @@ function updateStatsPanel() {
 // Admin Panel Functions
 // ========================================
 function setupAdminListeners() {
-    // Open admin modal
     adminToggle.addEventListener('click', () => {
         adminModal.classList.remove('hidden');
         passcodeInput.focus();
     });
     
-    // Close admin modal
     adminClose.addEventListener('click', closeAdminModal);
     adminOverlay.addEventListener('click', closeAdminModal);
     
-    // Passcode submit
     passcodeSubmit.addEventListener('click', checkPasscode);
     passcodeInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') checkPasscode();
     });
     
-    // Add activity form
     addActivityForm.addEventListener('submit', handleAddActivity);
-    
-    // Export/Import/Reset
     exportBtn.addEventListener('click', exportActivities);
     importBtn.addEventListener('click', () => importFile.click());
     importFile.addEventListener('change', handleImport);
@@ -1070,11 +783,7 @@ function checkPasscode() {
 function populateTagSelect() {
     const allTags = getTags();
     const container = document.getElementById('newActivityCategory');
-    
-    if (!container) {
-        console.error('Tag container not found');
-        return;
-    }
+    if (!container) return;
     
     container.innerHTML = '';
     
@@ -1086,7 +795,6 @@ function populateTagSelect() {
             <span class="tag-text">${tag}</span>
             <input type="checkbox" value="${tag}" name="activityTag" style="display:none;">
         `;
-        // Add click handler to toggle selected class
         label.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1097,7 +805,6 @@ function populateTagSelect() {
         container.appendChild(label);
     });
     
-    // Add "new tag" button
     const addTagBtn = document.createElement('button');
     addTagBtn.type = 'button';
     addTagBtn.className = 'admin-btn add-tag-btn';
@@ -1114,7 +821,6 @@ function populateTagSelect() {
                 <span class="tag-text">${newTag.trim()}</span>
                 <input type="checkbox" value="${newTag.trim()}" name="activityTag" checked style="display:none;">
             `;
-            // Add click handler to new tag
             label.addEventListener('click', (evt) => {
                 evt.preventDefault();
                 evt.stopPropagation();
@@ -1159,7 +865,6 @@ function populateAdminActivityList() {
         adminActivityList.appendChild(item);
     });
     
-    // Add edit handlers
     adminActivityList.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const index = parseInt(e.currentTarget.dataset.index);
@@ -1167,7 +872,6 @@ function populateAdminActivityList() {
         });
     });
     
-    // Add delete handlers
     adminActivityList.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const index = parseInt(e.currentTarget.dataset.index);
@@ -1176,9 +880,6 @@ function populateAdminActivityList() {
     });
 }
 
-// ========================================
-// Edit Tags Modal
-// ========================================
 let editingActivityIndex = null;
 
 function openEditTagsModal(index) {
@@ -1189,16 +890,13 @@ function openEditTagsModal(index) {
     const activityTags = getActivityTags(activity);
     const allTags = getTags();
     
-    // Create modal content
     const modalContent = `
         <div class="edit-tags-modal" id="editTagsModal">
             <div class="edit-tags-overlay" id="editTagsOverlay"></div>
             <div class="edit-tags-panel">
                 <button class="edit-tags-close" id="editTagsClose">&times;</button>
                 <h3>Edit Tags for "${activity.name}"</h3>
-                <div class="edit-tags-container" id="editTagsContainer">
-                    <!-- Tags will be populated here -->
-                </div>
+                <div class="edit-tags-container" id="editTagsContainer"></div>
                 <div class="edit-tags-actions">
                     <button class="admin-btn" id="cancelEditTags">Cancel</button>
                     <button class="admin-btn add-btn" id="saveEditTags">Save Tags</button>
@@ -1207,7 +905,6 @@ function openEditTagsModal(index) {
         </div>
     `;
     
-    // Add modal to body
     document.body.insertAdjacentHTML('beforeend', modalContent);
     
     const editTagsModal = document.getElementById('editTagsModal');
@@ -1217,7 +914,6 @@ function openEditTagsModal(index) {
     const cancelEditTags = document.getElementById('cancelEditTags');
     const saveEditTags = document.getElementById('saveEditTags');
     
-    // Populate tags
     allTags.forEach(tag => {
         const isSelected = activityTags.includes(tag);
         const label = document.createElement('label');
@@ -1237,7 +933,6 @@ function openEditTagsModal(index) {
         editTagsContainer.appendChild(label);
     });
     
-    // Add new tag button
     const addTagBtn = document.createElement('button');
     addTagBtn.type = 'button';
     addTagBtn.className = 'admin-btn add-tag-btn';
@@ -1265,7 +960,6 @@ function openEditTagsModal(index) {
     });
     editTagsContainer.appendChild(addTagBtn);
     
-    // Close handlers
     const closeEditModal = () => {
         editTagsModal.remove();
         editingActivityIndex = null;
@@ -1275,7 +969,6 @@ function openEditTagsModal(index) {
     editTagsOverlay.addEventListener('click', closeEditModal);
     cancelEditTags.addEventListener('click', closeEditModal);
     
-    // Save handler
     saveEditTags.addEventListener('click', async () => {
         const selectedTagCheckboxes = editTagsContainer.querySelectorAll('input[name="editTag"]:checked');
         const newTags = Array.from(selectedTagCheckboxes).map(cb => cb.value);
@@ -1286,16 +979,14 @@ function openEditTagsModal(index) {
         }
         
         currentActivities[editingActivityIndex].tags = newTags;
-        // Remove old category if exists
         delete currentActivities[editingActivityIndex].category;
         
         const saved = await saveActivitiesToFirebase();
-        if (saved) {
-            closeEditModal();
-            refreshUI();
-            populateAdminActivityList();
-        } else {
-            alert('Failed to save changes');
+        closeEditModal();
+        refreshUI();
+        populateAdminActivityList();
+        if (!saved) {
+            alert('Saved locally (Firebase permission restricted).');
         }
     });
 }
@@ -1306,8 +997,6 @@ async function handleAddActivity(e) {
     const name = document.getElementById('newActivityName').value.trim();
     const url = document.getElementById('newActivityUrl').value.trim();
     const description = document.getElementById('newActivityDescription').value.trim();
-    
-    // Get selected tags from checkboxes
     const tagCheckboxes = document.querySelectorAll('input[name="activityTag"]:checked');
     const selectedTagsArray = Array.from(tagCheckboxes).map(cb => cb.value);
     
@@ -1327,15 +1016,13 @@ async function handleAddActivity(e) {
     currentActivities.push(newActivity);
     const saved = await saveActivitiesToFirebase();
     
+    refreshUI();
+    addActivityForm.reset();
+    populateAdminActivityList();
     if (saved) {
-        refreshUI();
-        // Reset form
-        addActivityForm.reset();
-        populateAdminActivityList();
-        alert(`Added "${name}" to activities! Changes are live for everyone.`);
+        alert(`Added "${name}" successfully!`);
     } else {
-        // Rollback on failure
-        currentActivities.pop();
+        alert(`Added "${name}" locally (Firebase permission restricted).`);
     }
 }
 
@@ -1344,9 +1031,10 @@ async function deleteActivity(index) {
     if (confirm(`Delete "${activity.name}"?`)) {
         currentActivities.splice(index, 1);
         const saved = await saveActivitiesToFirebase();
-        if (saved) {
-            refreshUI();
-            populateAdminActivityList();
+        refreshUI();
+        populateAdminActivityList();
+        if (!saved) {
+            alert('Deleted locally (Firebase permission restricted).');
         }
     }
 }
@@ -1371,13 +1059,15 @@ async function handleImport(e) {
         try {
             const imported = JSON.parse(event.target.result);
             if (Array.isArray(imported) && imported.length > 0) {
-                if (confirm(`Import ${imported.length} activities? This will replace current activities for EVERYONE.`)) {
+                if (confirm(`Import ${imported.length} activities? This will replace current activities.`)) {
                     currentActivities = imported;
                     const saved = await saveActivitiesToFirebase();
+                    refreshUI();
+                    populateAdminActivityList();
                     if (saved) {
-                        refreshUI();
-                        populateAdminActivityList();
                         alert('Activities imported successfully!');
+                    } else {
+                        alert('Imported locally (Firebase permission restricted).');
                     }
                 }
             } else {
@@ -1392,20 +1082,21 @@ async function handleImport(e) {
 }
 
 async function resetActivities() {
-    if (confirm('Reset to default activities? This will affect EVERYONE!')) {
+    if (confirm('Reset to default activities?')) {
         currentActivities = [...activities];
         const saved = await saveActivitiesToFirebase();
+        refreshUI();
+        populateAdminActivityList();
         if (saved) {
-            refreshUI();
-            populateAdminActivityList();
-            alert('Reset to default activities!');
+            alert('Reset to default activities successfully!');
+        } else {
+            alert('Reset locally (Firebase permission restricted).');
         }
     }
 }
 
 function refreshUI() {
     updateFilteredActivities();
-    populateSlotReel();
     populateActivityGrid();
     populateFilters();
 }

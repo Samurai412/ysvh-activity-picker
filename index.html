@@ -10,52 +10,57 @@
     <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
-    <div class="background-effects">
-        <div class="floating-shapes"></div>
-        <div class="particle-container" id="particles"></div>
-    </div>
-    
     <div class="container">
         <header>
-            <h1 class="glitch" data-text="YSVH">YSVH</h1>
+            <h1 class="picker-title">YSVH</h1>
             <p class="subtitle">Voice Chat Activity Picker</p>
         </header>
 
         <main>
             <div class="picker-container">
-                <div class="slot-machine" id="slotMachine">
-                    <div class="slot-window">
-                        <div class="slot-reel" id="slotReel">
-                            <!-- Activities will be populated here -->
-                        </div>
-                    </div>
-                    <div class="slot-overlay top"></div>
-                    <div class="slot-overlay bottom"></div>
-                </div>
-
-                <div class="selected-activity" id="selectedActivity">
-                    <div class="activity-card hidden" id="activityCard">
-                        <div class="card-glow"></div>
+                <div class="dice-container" id="diceContainer"></div>
+                <div class="selected-activities-container hidden" id="selectedActivitiesContainer">
+                    <div class="activity-card" id="activityCard1">
                         <div class="card-content">
-                            <span class="category-badge" id="categoryBadge"></span>
-                            <h2 id="activityName"></h2>
-                            <p id="activityDescription"></p>
-                            <a href="#" id="activityLink" target="_blank" class="go-button">
+                            <span class="category-badge" id="categoryBadge1"></span>
+                            <h2 id="activityName1"></h2>
+                            <p id="activityDescription1"></p>
+                            <a href="#" id="activityLink1" target="_blank" class="go-button">
                                 <span>Let's Go!</span>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M5 12h14M12 5l7 7-7 7"/>
                                 </svg>
                             </a>
+                            <div class="activity-actions" id="activityActions1"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-card" id="activityCard2">
+                        <div class="card-content">
+                            <span class="category-badge" id="categoryBadge2"></span>
+                            <h2 id="activityName2"></h2>
+                            <p id="activityDescription2"></p>
+                            <a href="#" id="activityLink2" target="_blank" class="go-button">
+                                <span>Let's Go!</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                                </svg>
+                            </a>
+                            <div class="activity-actions" id="activityActions2"></div>
                         </div>
                     </div>
                 </div>
 
                 <div class="controls">
+                    <div class="roll-choice-container">
+                        <button class="choice-btn" id="choiceRoll1" data-count="1">1 Activity</button>
+                        <button class="choice-btn active" id="choiceRoll2" data-count="2">2 Activities</button>
+                    </div>
                     <button class="pick-button" id="pickButton">
                         <span class="button-bg"></span>
                         <span class="button-text">
                             <span class="icon">🎲</span>
-                            Pick Random Activity
+                            Roll Activities
                         </span>
                     </button>
                     
